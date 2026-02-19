@@ -1,18 +1,46 @@
-// ClawForge v4.0 - Full-Screen React Dashboard
+// ClawForge v4.0 - Full-Screen React Dashboard with Markdown Support
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
 const API_BASE = 'http://127.0.0.1:8000';
+
+// Simple Markdown Parser
+function parseMarkdown(text) {
+  if (!text) return '';
+  
+  let html = text
+    // Code blocks
+    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    // Bold
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    // Italic
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    // Headers
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    // Lists
+    .replace(/^\- (.+)$/gm, '<li>$1</li>')
+    .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+    // Links
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    // Line breaks
+    .replace(/\n/g, '<br>');
+  
+  return html;
+}
 
 function App() {
   const [activeTab, setActiveTab] = useState('chat');
   const [security, setSecurity] = useState({ mode: 'LOCKED', riskScore: 0 });
   const [loading, setLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState([
-    { role: 'system', content: "Hello! I'm ClawForge, an advanced AI assistant.\n\nWhat I Can Do:\n\n- Deep Understanding - complex questions, context retention\n- Reasoning & Analysis - step-by-step problem solving\n- Web Search - Get current information\n- Memory - Remember important things\n- Code - Write and run Python\n- Files - Read and edit files\n- Planning - Create multi-step plans\n\nJust tell me what you need - I'll understand and help!" }
+    { role: 'system', content: "Hello! I'm ClawForge, an advanced AI assistant.\n\nWhat I Can Do:\n- Deep Understanding - complex questions, context retention\n- Reasoning & Analysis - step-by-step problem solving\n- Web Search - Get current information\n- Memory - Remember important things\n- Code - Write and run Python\n- Files - Read and edit files\n- Planning - Create multi-step plans\n\nJust tell me what you need - I'll understand and help!" }
   ]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
   const [models, setModels] = useState([
     'z-ai/glm5',
     'qwen/qwen3.5-397b-a17b',
@@ -24,15 +52,73 @@ function App() {
   const [apiStatus, setApiStatus] = useState({ provider: 'Checking...', status: 'checking' });
   const [memoryStats, setMemoryStats] = useState(null);
   const messagesEndRef = useRef(null);
+  const heartbeatRef = useRef(null);
+  const reconnectAttempts = useRef(0);
 
+  // Initial load
   useEffect(() => {
     checkApiStatus();
     fetchMemoryStats();
+    startHeartbeat();
+    return () => stopHeartbeat();
   }, []);
 
+  // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
+
+  // Heartbeat to keep connection alive
+  const startHeartbeat = () => {
+    // Heartbeat every 30 seconds to keep connection alive
+    heartbeatRef.current = setInterval(async () => {
+      try {
+        await fetch(`${API_BASE}/api/health`, { 
+          method: 'GET',
+          cache: 'no-cache'
+        });
+        if (!isConnected) {
+          setIsConnected(true);
+          reconnectAttempts.current = 0;
+        }
+      } catch (e) {
+        handleDisconnect();
+      }
+    }, 30000);
+  };
+
+  const stopHeartbeat = () => {
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current);
+    }
+  };
+
+  const handleDisconnect = () => {
+    setIsConnected(false);
+    if (reconnectAttempts.current < 5) {
+      reconnectAttempts.current++;
+      setTimeout(() => {
+        attemptReconnect();
+      }, 5000 * reconnectAttempts.current);
+    }
+  };
+
+  const attemptReconnect = async () => {
+    try {
+      await fetch(`${API_BASE}/api/health`, { 
+        method: 'GET',
+        cache: 'no-cache'
+      });
+      setIsConnected(true);
+      reconnectAttempts.current = 0;
+    } catch (e) {
+      if (reconnectAttempts.current < 5) {
+        setTimeout(() => {
+          attemptReconnect();
+        }, 5000 * reconnectAttempts.current);
+      }
+    }
+  };
 
   const checkApiStatus = async () => {
     const apiKey = process.env.NVIDIA_API_KEY || localStorage.getItem('nvidia_api_key');
@@ -45,7 +131,10 @@ function App() {
 
   const fetchMemoryStats = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/memory/stats`);
+      const res = await fetch(`${API_BASE}/api/memory/stats`, {
+        method: 'GET',
+        cache: 'no-cache'
+      });
       if (res.ok) {
         const data = await res.json();
         setMemoryStats(data);
@@ -57,11 +146,16 @@ function App() {
 
   const sendChatMessage = async () => {
     if (!chatInput.trim() || chatLoading) return;
+    if (!isConnected) {
+      attemptReconnect();
+      return;
+    }
     
     const userMessage = chatInput.trim();
     setChatInput('');
     setChatMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setChatLoading(true);
+    reconnectAttempts.current = 0;
 
     try {
       let endpoint = '/api/chat';
@@ -71,7 +165,8 @@ function App() {
       const res = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: `You are ClawForge, a helpful AI assistant. User says: "${userMessage}"` })
+        body: JSON.stringify({ message: `You are ClawForge, a helpful AI assistant. User says: "${userMessage}"` }),
+        cache: 'no-cache'
       });
 
       const data = await res.json();
@@ -82,7 +177,8 @@ function App() {
         setChatMessages(prev => [...prev, { role: 'assistant', content: data.message || 'Error: ' + data.error }]);
       }
     } catch (e) {
-      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I could not connect to the API. Make sure your API key is set.' }]);
+      handleDisconnect();
+      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Connection lost. Attempting to reconnect...' }]);
     }
     
     setChatLoading(false);
@@ -107,6 +203,11 @@ function App() {
 
   const renderChat = () => (
     <div className="chat-view">
+      {!isConnected && (
+        <div className="connection-banner">
+          <span>🔄 Reconnecting...</span>
+        </div>
+      )}
       <div className="chat-header">
         <h2>Chat with ClawForge</h2>
         <p>Powered by {selectedModel.split('/')[1] || selectedModel} via NVIDIA API</p>
@@ -116,7 +217,10 @@ function App() {
         {chatMessages.map((msg, i) => (
           <div key={i} className={`chat-message ${msg.role}`}>
             <div className="message-role">{msg.role === 'system' ? 'ClawForge' : msg.role}</div>
-            <div className="message-content">{msg.content}</div>
+            <div 
+              className="message-content" 
+              dangerouslySetInnerHTML={{ __html: parseMarkdown(msg.content) }}
+            />
           </div>
         ))}
         {chatLoading && (
@@ -142,7 +246,7 @@ function App() {
           />
           <button 
             onClick={sendChatMessage} 
-            disabled={!chatInput.trim() || chatLoading}
+            disabled={!chatInput.trim() || chatLoading || !isConnected}
             className="send-btn"
           >
             Send
@@ -175,7 +279,7 @@ function App() {
           <p>Available for conversation</p>
         </div>
         <div className="dashboard-card">
-          <div className="stat">{apiStatus.status === 'online' ? 'Yes' : 'No'}</div>
+          <div className="stat">{isConnected ? 'Yes' : 'No'}</div>
           <h3>API Connected</h3>
           <p>{apiStatus.provider}</p>
         </div>
