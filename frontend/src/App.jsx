@@ -131,7 +131,7 @@ function App() {
 
   const fetchMemoryStats = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/memory/stats`, {
+      const res = await fetch(`${API_BASE}/api/longterm-memory/stats`, {
         method: 'GET',
         cache: 'no-cache'
       });
@@ -140,7 +140,7 @@ function App() {
         setMemoryStats(data);
       }
     } catch (e) {
-      console.log('Memory stats not available');
+      console.log('Long-term memory not available');
     }
   };
 
@@ -266,22 +266,42 @@ function App() {
         <div className="dashboard-card">
           <div className="stat">{memoryStats?.total || 0}</div>
           <h3>Total Memories</h3>
-          <p>Stored information and knowledge</p>
+          <p>Stored facts and knowledge</p>
+        </div>
+        <div className="dashboard-card">
+          <div className="stat">{memoryStats?.session_count || 0}</div>
+          <h3>Sessions</h3>
+          <p>Conversations remembered</p>
+        </div>
+        <div className="dashboard-card">
+          <div className="stat">{memoryStats?.open_tasks || 0}</div>
+          <h3>Open Tasks</h3>
+          <p>Tasks being tracked</p>
         </div>
         <div className="dashboard-card">
           <div className="stat">{security.riskScore || 0}</div>
           <h3>Risk Score</h3>
-          <p>Current security assessment</p>
+          <p>Current security level</p>
         </div>
         <div className="dashboard-card">
           <div className="stat">{models.length}</div>
           <h3>AI Models</h3>
-          <p>Available for conversation</p>
+          <p>Available for chat</p>
         </div>
         <div className="dashboard-card">
           <div className="stat">{isConnected ? 'Yes' : 'No'}</div>
           <h3>API Connected</h3>
           <p>{apiStatus.provider}</p>
+        </div>
+        <div className="dashboard-card">
+          <div className="stat">{memoryStats?.completed_tasks || 0}</div>
+          <h3>Completed Tasks</h3>
+          <p>Tasks finished</p>
+        </div>
+        <div className="dashboard-card">
+          <div className="stat">{memoryStats?.total_messages || 0}</div>
+          <h3>Total Messages</h3>
+          <p>Across all sessions</p>
         </div>
       </div>
     </div>

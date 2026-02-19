@@ -1229,6 +1229,18 @@ except ImportError as e:
     print(f"[PROMPT] Warning: Prompt Engine not available: {e}")
 
 # ============================================================================
+# MEMORY SYSTEM API ROUTES
+# ============================================================================
+
+# Import and add memory system routes
+try:
+    from memory_api import router as memory_router
+    app.include_router(memory_router)
+    print("[MEMORY] Memory System routes loaded")
+except ImportError as e:
+    print(f"[MEMORY] Warning: Memory System not available: {e}")
+
+# ============================================================================
 # MAIN ENTRY POINT
 # ============================================================================
 
