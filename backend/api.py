@@ -1217,6 +1217,18 @@ async def generate_plan_endpoint(request: GeneratePlanRequest):
     return plan.to_dict()
 
 # ============================================================================
+# PROMPT ENGINE API ROUTES
+# ============================================================================
+
+# Import and add prompt engine routes
+try:
+    from prompt_api import router as prompt_router
+    app.include_router(prompt_router)
+    print("[PROMPT] Advanced Prompt Engine routes loaded")
+except ImportError as e:
+    print(f"[PROMPT] Warning: Prompt Engine not available: {e}")
+
+# ============================================================================
 # MAIN ENTRY POINT
 # ============================================================================
 
