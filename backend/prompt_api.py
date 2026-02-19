@@ -20,14 +20,14 @@ from prompt_engine import (
 
 router = APIRouter(prefix="/api/prompt", tags=["Prompt Engine"])
 
-# Global prompt engine instance
-prompt_engine = PromptEngine()
-
-# Register extended personas
+# Load prompt engine with all personas registered
 try:
-    from extended_personas import EXTENDED_PERSONAS, register_extended_personas
-    register_extended_personas(prompt_engine)
-    print(f"[PROMPT] Loaded {len(EXTENDED_PERSONAS)} extended personas")
+    from extended_personas import load_all_personas
+    prompt_engine = load_all_personas()
+    print(f"[PROMPT] Loaded {len(prompt_engine.DEFAULT_PERSONAS)} personas total")
+except ImportError:
+    prompt_engine = PromptEngine()
+    print("[PROMPT] Extended personas not available")
 except ImportError:
     print("[PROMPT] Extended personas not available")
 

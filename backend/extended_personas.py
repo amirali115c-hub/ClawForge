@@ -5,6 +5,10 @@ Additional roles beyond the default 6 personas.
 
 from prompt_engine import Persona, Tone
 
+# Import PromptEngine to update class attribute
+import importlib
+prompt_engine_module = importlib.import_module("prompt_engine")
+
 EXTENDED_PERSONAS = {
     # Writing & Content Creators
     "copywriter": Persona(

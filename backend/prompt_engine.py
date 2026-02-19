@@ -49,7 +49,7 @@ class Perspective(Enum):
     DEVILS_ADVOCATE = "devils_advocate"
     ARGUE_FOR = "argue_for"
     ARGUE_AGAINST = "argue_against"
-    STEELMAN = "steelmant
+    STEELMAN = "steelman"
 
 
 class SpecificityLevel(Enum):
