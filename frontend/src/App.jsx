@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
-const API_BASE = 'http://127.0.0.1:8000';
+const API_BASE = '';  // Use proxy - relative to frontend
 
 // Simple Markdown Parser
 function parseMarkdown(text) {
