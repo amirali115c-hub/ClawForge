@@ -23,6 +23,14 @@ router = APIRouter(prefix="/api/prompt", tags=["Prompt Engine"])
 # Global prompt engine instance
 prompt_engine = PromptEngine()
 
+# Register extended personas
+try:
+    from extended_personas import EXTENDED_PERSONAS, register_extended_personas
+    register_extended_personas(prompt_engine)
+    print(f"[PROMPT] Loaded {len(EXTENDED_PERSONAS)} extended personas")
+except ImportError:
+    print("[PROMPT] Extended personas not available")
+
 
 # ============================================================================
 # REQUEST/RESPONSE MODELS

@@ -705,3 +705,359 @@ body {
 .plan-result li {
   margin-bottom: 0.5rem;
 }
+
+/* ============================================================================
+   PROMPT ENGINE STYLES
+   ============================================================================ */
+
+.prompt-engine-view {
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.prompt-header {
+  margin-bottom: 1.5rem;
+}
+
+.prompt-header h2 {
+  color: #e94560;
+  margin-bottom: 0.5rem;
+}
+
+.prompt-header p {
+  color: #888;
+}
+
+.prompt-content {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.prompt-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+}
+
+.section-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.section-tab {
+  background: #16213e;
+  border: none;
+  color: #888;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.section-tab:hover {
+  background: #1a1a2e;
+  color: #eee;
+}
+
+.section-tab.active {
+  background: #e94560;
+  color: white;
+}
+
+.prompt-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.prompt-section {
+  background: #16213e;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.prompt-section h3 {
+  color: #e94560;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.prompt-input {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #0f3460;
+  border-radius: 4px;
+  background: #1a1a2e;
+  color: #eee;
+  font-size: 1rem;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.prompt-input:focus {
+  outline: none;
+  border-color: #e94560;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+.form-select,
+.form-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #0f3460;
+  border-radius: 4px;
+  background: #1a1a2e;
+  color: #eee;
+  font-size: 0.95rem;
+}
+
+.form-select:focus,
+.form-input:focus {
+  outline: none;
+  border-color: #e94560;
+}
+
+.checkbox-group {
+  margin-bottom: 1rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #e94560;
+}
+
+.checkbox-label span {
+  font-weight: 500;
+}
+
+.checkbox-label small {
+  display: block;
+  color: #888;
+  font-size: 0.8rem;
+  margin-left: auto;
+}
+
+.constraint-row,
+.example-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  align-items: flex-start;
+}
+
+.constraint-type {
+  width: 100px;
+  padding: 0.5rem;
+  border: 1px solid #0f3460;
+  border-radius: 4px;
+  background: #1a1a2e;
+  color: #eee;
+}
+
+.constraint-input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #0f3460;
+  border-radius: 4px;
+  background: #1a1a2e;
+  color: #eee;
+}
+
+.constraint-input:focus,
+.example-row textarea:focus {
+  outline: none;
+  border-color: #e94560;
+}
+
+.example-row {
+  flex-direction: column;
+}
+
+.example-input,
+.example-output {
+  flex: 1;
+}
+
+.example-row textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #0f3460;
+  border-radius: 4px;
+  background: #1a1a2e;
+  color: #eee;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.remove-btn {
+  background: #ff4444;
+  border: none;
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.remove-btn:hover {
+  background: #cc3333;
+}
+
+.add-btn {
+  background: #0f3460;
+  border: none;
+  color: #e94560;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.add-btn:hover {
+  background: #1a4a7a;
+}
+
+.style-sample {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #0f3460;
+  border-radius: 4px;
+  background: #1a1a2e;
+  color: #eee;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 120px;
+}
+
+.compile-section {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+.compile-btn {
+  background: linear-gradient(135deg, #e94560, #c73659);
+  border: none;
+  color: white;
+  padding: 1rem 3rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.compile-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+}
+
+.compile-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prompt-results {
+  background: #16213e;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.results-header h3 {
+  color: #44aa44;
+}
+
+.token-badge {
+  background: #0f3460;
+  color: #aaa;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.features-used {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #0f3460;
+}
+
+.features-used h4 {
+  color: #888;
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.feature-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.feature-tag {
+  background: #0f3460;
+  color: #e94560;
+  padding: 0.35rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+}
+
+.compiled-prompt {
+  background: #1a1a2e;
+  border-radius: 4px;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.compiled-prompt pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #aaa;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .prompt-content {
+    flex-direction: column;
+  }
+  
+  .prompt-sidebar {
+    width: 100%;
+  }
+  
+  .section-tabs {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}

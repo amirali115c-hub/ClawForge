@@ -365,6 +365,7 @@ function App() {
 
   const tabs = [
     { id: 'chat', label: 'Chat', icon: 'C' },
+    { id: 'prompt', label: 'Prompt Engine', icon: 'P' },
     { id: 'dashboard', label: 'Dashboard', icon: 'D' },
     { id: 'tasks', label: 'Tasks', icon: 'T' },
     { id: 'memory', label: 'Memory', icon: 'M' },
@@ -420,6 +421,10 @@ function App() {
           />
         )}
         
+        {activeTab === 'prompt' && (
+          <PromptEngineView />
+        )}
+        
         {activeTab === 'dashboard' && (
           <DashboardView 
             tasks={tasks} 
@@ -465,6 +470,581 @@ function App() {
         
         {activeTab === 'security' && <SecurityView security={security} />}
       </main>
+    </div>
+  );
+}
+
+// ============================================================================
+// PROMPT ENGINE VIEW
+// ============================================================================
+
+function PromptEngineView() {
+  const [userMessage, setUserMessage] = useState('');
+  const [compiledPrompt, setCompiledPrompt] = useState('');
+  const [featuresUsed, setFeaturesUsed] = useState([]);
+  const [tokenEstimate, setTokenEstimate] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [activeSection, setActiveSection] = useState('persona');
+
+  // Prompt configuration state
+  const [selectedPersona, setSelectedPersona] = useState('');
+  const [outputFormat, setOutputFormat] = useState('prose');
+  const [length, setLength] = useState('medium');
+  const [tone, setTone] = useState('neutral');
+  const [specificity, setSpecificity] = useState('medium');
+  const [chainOfThought, setChainOfThought] = useState(false);
+  const [taskDecomposition, setTaskDecomposition] = useState(false);
+  const [selfReview, setSelfReview] = useState(false);
+  const [knowledgeScope, setKnowledgeScope] = useState('unlimited');
+  const [uncertaintyHandling, setUncertaintyHandling] = useState('acknowledge');
+  const [audience, setAudience] = useState('');
+  const [audienceExpertise, setAudienceExpertise] = useState('adult');
+  const [constraints, setConstraints] = useState([{ type: 'positive', description: '' }]);
+  const [examples, setExamples] = useState([{ input: '', output: '' }]);
+  const [outputPrefix, setOutputPrefix] = useState('');
+  const [outputSuffix, setOutputSuffix] = useState('');
+  const [styleSample, setStyleSample] = useState('');
+
+  const personas = [
+    { value: '', label: '-- Select Persona --' },
+    { value: 'cybersecurity_expert', label: '🛡️ Cybersecurity Expert' },
+    { value: 'philosophy_tutor', label: '🎓 Philosophy Tutor' },
+    { value: 'business_consultant', label: '💼 Business Consultant' },
+    { value: 'creative_writer', label: '✍️ Creative Writer' },
+    { value: 'technical_writer', label: '📚 Technical Writer' },
+    { value: 'data_scientist', label: '🔬 Data Scientist' },
+    { value: 'copywriter', label: '📢 Copywriter' },
+    { value: 'journalist', label: '📰 Journalist' },
+    { value: 'executive_coach', label: '🎯 Executive Coach' },
+    { value: 'seo_specialist', label: '🔍 SEO Specialist' },
+    { value: 'professor', label: '🏛️ Professor' },
+    { value: 'devops_engineer', label: '⚙️ DevOps Engineer' },
+  ];
+
+  const formats = [
+    { value: 'prose', label: 'Prose (Paragraphs)' },
+    { value: 'markdown', label: 'Markdown' },
+    { value: 'json', label: 'JSON' },
+    { value: 'bullets', label: 'Bullet Points' },
+    { value: 'numbered', label: 'Numbered List' },
+    { value: 'table', label: 'Table' },
+    { value: 'code', label: 'Code Block' },
+  ];
+
+  const lengths = [
+    { value: 'short', label: 'Short (~100 words)' },
+    { value: 'medium', label: 'Medium (~300 words)' },
+    { value: 'long', label: 'Long (~800 words)' },
+    { value: 'exhaustive', label: 'Exhaustive (All details)' },
+  ];
+
+  const tones = [
+    { value: 'neutral', label: 'Neutral' },
+    { value: 'formal', label: 'Formal' },
+    { value: 'casual', label: 'Casual' },
+    { value: 'empathetic', label: 'Empathetic' },
+    { value: 'authoritative', label: 'Authoritative' },
+    { value: 'playful', label: 'Playful' },
+    { value: 'socratic', label: 'Socratic' },
+    { value: 'blunt', label: 'Blunt' },
+    { value: 'diplomatic', label: 'Diplomatic' },
+    { value: 'persuasive', label: 'Persuasive' },
+    { value: 'technical', label: 'Technical' },
+  ];
+
+  const specificities = [
+    { value: 'high_level', label: 'High Level Overview' },
+    { value: 'medium', label: 'Medium Detail' },
+    { value: 'detailed', label: 'Detailed' },
+    { value: 'granular', label: 'Granular (Edge Cases)' },
+  ];
+
+  const audienceExpertises = [
+    { value: 'child', label: 'Child (10-year-old)' },
+    { value: 'teen', label: 'Teenager' },
+    { value: 'adult', label: 'General Adult' },
+    { value: 'expert', label: 'Subject Expert' },
+    { value: 'phd', label: 'PhD Level' },
+  ];
+
+  const knowledgeScopes = [
+    { value: 'unlimited', label: 'Unlimited (All Knowledge)' },
+    { value: 'provided_only', label: 'Provided Documents Only' },
+    { value: 'conversation_only', label: 'Conversation Only' },
+  ];
+
+  const uncertaintyModes = [
+    { value: 'acknowledge', label: 'Acknowledge Uncertainty' },
+    { value: 'guess', label: 'Make Reasonable Guesses' },
+    { value: 'ask_clarification', label: 'Ask for Clarification' },
+  ];
+
+  const handleCompile = async () => {
+    if (!userMessage.trim()) {
+      alert('Please enter a message to compile a prompt for');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/prompt/compile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_message: userMessage,
+          persona: selectedPersona ? { persona_name: selectedPersona } : null,
+          formatting: {
+            format: outputFormat,
+            length: length,
+            structure: outputFormat === 'bullets' ? 'bullets' : outputFormat === 'numbered' ? 'numbered' : 'prose'
+          },
+          chain_of_thought: chainOfThought,
+          show_reasoning: chainOfThought,
+          task_decomposition: taskDecomposition,
+          tone: tone,
+          specificity: specificity,
+          audience: audience ? {
+            name: audience,
+            expertise_level: audienceExpertise
+          } : null,
+          knowledge_scope: knowledgeScope,
+          uncertainty_handling: uncertaintyHandling,
+          output_prefix: outputPrefix || null,
+          output_suffix: outputSuffix || null,
+          style_sample: styleSample || null,
+          self_review: selfReview,
+          constraints: constraints.filter(c => c.description.trim()).map(c => ({
+            type: c.type,
+            description: c.description,
+            category: 'style'
+          })),
+          examples: examples.filter(e => e.input.trim() && e.output.trim()).map(e => ({
+            input: e.input,
+            output: e.output
+          }))
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setCompiledPrompt(data.system_prompt);
+        setFeaturesUsed(data.features_used);
+        setTokenEstimate(data.token_estimate);
+        setResult(data);
+      } else {
+        alert('Failed to compile prompt');
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+    setLoading(false);
+  };
+
+  const addConstraint = () => {
+    setConstraints([...constraints, { type: 'positive', description: '' }]);
+  };
+
+  const removeConstraint = (index) => {
+    setConstraints(constraints.filter((_, i) => i !== index));
+  };
+
+  const updateConstraint = (index, field, value) => {
+    const newConstraints = [...constraints];
+    newConstraints[index][field] = value;
+    setConstraints(newConstraints);
+  };
+
+  const addExample = () => {
+    setExamples([...examples, { input: '', output: '' }]);
+  };
+
+  const removeExample = (index) => {
+    setExamples(examples.filter((_, i) => i !== index));
+  };
+
+  const updateExample = (index, field, value) => {
+    const newExamples = [...examples];
+    newExamples[index][field] = value;
+    setExamples(newExamples);
+  };
+
+  const sections = [
+    { id: 'persona', label: '👤 Persona' },
+    { id: 'format', label: '📝 Format' },
+    { id: 'reasoning', label: '🧠 Reasoning' },
+    { id: 'audience', label: '👥 Audience' },
+    { id: 'constraints', label: '⚡ Constraints' },
+    { id: 'examples', label: '📋 Examples' },
+    { id: 'advanced', label: '⚙️ Advanced' },
+  ];
+
+  return (
+    <div className="prompt-engine-view">
+      <div className="prompt-header">
+        <h2>Advanced Prompt Engine</h2>
+        <p>Create powerful prompts with all 25 advanced features</p>
+      </div>
+
+      <div className="prompt-content">
+        <div className="prompt-sidebar">
+          <div className="section-tabs">
+            {sections.map(section => (
+              <button
+                key={section.id}
+                className={`section-tab ${activeSection === section.id ? 'active' : ''}`}
+                onClick={() => setActiveSection(section.id)}
+              >
+                {section.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="prompt-main">
+          {/* User Message */}
+          <div className="prompt-section">
+            <label>What do you want the AI to do?</label>
+            <textarea
+              value={userMessage}
+              onChange={(e) => setUserMessage(e.target.value)}
+              placeholder="e.g., Write a blog post about AI trends, Explain quantum computing simply, Create a marketing campaign..."
+              className="prompt-input"
+              rows={3}
+            />
+          </div>
+
+          {/* Persona Section */}
+          {activeSection === 'persona' && (
+            <div className="prompt-section">
+              <h3>👤 Persona Selection</h3>
+              <div className="form-group">
+                <label>Select Persona</label>
+                <select
+                  value={selectedPersona}
+                  onChange={(e) => setSelectedPersona(e.target.value)}
+                  className="form-select"
+                >
+                  {personas.map(p => (
+                    <option key={p.value} value={p.value}>{p.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Communication Tone</label>
+                <select
+                  value={tone}
+                  onChange={(e) => setTone(e.target.value)}
+                  className="form-select"
+                >
+                  {tones.map(t => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Specificity Level</label>
+                <select
+                  value={specificity}
+                  onChange={(e) => setSpecificity(e.target.value)}
+                  className="form-select"
+                >
+                  {specificities.map(s => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Format Section */}
+          {activeSection === 'format' && (
+            <div className="prompt-section">
+              <h3>📝 Output Format</h3>
+              <div className="form-group">
+                <label>Output Format</label>
+                <select
+                  value={outputFormat}
+                  onChange={(e) => setOutputFormat(e.target.value)}
+                  className="form-select"
+                >
+                  {formats.map(f => (
+                    <option key={f.value} value={f.value}>{f.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Response Length</label>
+                <select
+                  value={length}
+                  onChange={(e) => setLength(e.target.value)}
+                  className="form-select"
+                >
+                  {lengths.map(l => (
+                    <option key={l.value} value={l.value}>{l.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Output Prefix (optional)</label>
+                <input
+                  type="text"
+                  value={outputPrefix}
+                  onChange={(e) => setOutputPrefix(e.target.value)}
+                  placeholder="e.g., Here is the answer:"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Output Suffix (optional)</label>
+                <input
+                  type="text"
+                  value={outputSuffix}
+                  onChange={(e) => setOutputSuffix(e.target.value)}
+                  placeholder="e.g., Let me know if you need more."
+                  className="form-input"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Reasoning Section */}
+          {activeSection === 'reasoning' && (
+            <div className="prompt-section">
+              <h3>🧠 Reasoning & Analysis</h3>
+              <div className="checkbox-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={chainOfThought}
+                    onChange={(e) => setChainOfThought(e.target.checked)}
+                  />
+                  <span>Chain-of-Thought Reasoning</span>
+                  <small>Show step-by-step reasoning process</small>
+                </label>
+              </div>
+
+              <div className="checkbox-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={taskDecomposition}
+                    onChange={(e) => setTaskDecomposition(e.target.checked)}
+                  />
+                  <span>Task Decomposition</span>
+                  <small>Break complex tasks into subtasks</small>
+                </label>
+              </div>
+
+              <div className="checkbox-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={selfReview}
+                    onChange={(e) => setSelfReview(e.target.checked)}
+                  />
+                  <span>Self-Review Before Output</span>
+                  <small>Critique and improve before responding</small>
+                </label>
+              </div>
+
+              <div className="form-group">
+                <label>Uncertainty Handling</label>
+                <select
+                  value={uncertaintyHandling}
+                  onChange={(e) => setUncertaintyHandling(e.target.value)}
+                  className="form-select"
+                >
+                  {uncertaintyModes.map(m => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Audience Section */}
+          {activeSection === 'audience' && (
+            <div className="prompt-section">
+              <h3>👥 Target Audience</h3>
+              <div className="form-group">
+                <label>Audience Name</label>
+                <input
+                  type="text"
+                  value={audience}
+                  onChange={(e) => setAudience(e.target.value)}
+                  placeholder="e.g., Software Developers, Students, Executives"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Expertise Level</label>
+                <select
+                  value={audienceExpertise}
+                  onChange={(e) => setAudienceExpertise(e.target.value)}
+                  className="form-select"
+                >
+                  {audienceExpertises.map(e => (
+                    <option key={e.value} value={e.value}>{e.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Constraints Section */}
+          {activeSection === 'constraints' && (
+            <div className="prompt-section">
+              <h3>⚡ Constraints</h3>
+              {constraints.map((constraint, index) => (
+                <div key={index} className="constraint-row">
+                  <select
+                    value={constraint.type}
+                    onChange={(e) => updateConstraint(index, 'type', e.target.value)}
+                    className="constraint-type"
+                  >
+                    <option value="positive">Always</option>
+                    <option value="negative">Never</option>
+                  </select>
+                  <input
+                    type="text"
+                    value={constraint.description}
+                    onChange={(e) => updateConstraint(index, 'description', e.target.value)}
+                    placeholder="e.g., cite sources"
+                    className="constraint-input"
+                  />
+                  {constraints.length > 1 && (
+                    <button
+                      onClick={() => removeConstraint(index)}
+                      className="remove-btn"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button onClick={addConstraint} className="add-btn">
+                + Add Constraint
+              </button>
+            </div>
+          )}
+
+          {/* Examples Section */}
+          {activeSection === 'examples' && (
+            <div className="prompt-section">
+              <h3>📋 Examples (Few-Shot Learning)</h3>
+              {examples.map((example, index) => (
+                <div key={index} className="example-row">
+                  <div className="example-input">
+                    <label>Input {index + 1}</label>
+                    <textarea
+                      value={example.input}
+                      onChange={(e) => updateExample(index, 'input', e.target.value)}
+                      placeholder="Example input..."
+                      rows={2}
+                    />
+                  </div>
+                  <div className="example-output">
+                    <label>Output {index + 1}</label>
+                    <textarea
+                      value={example.output}
+                      onChange={(e) => updateExample(index, 'output', e.target.value)}
+                      placeholder="Example output..."
+                      rows={2}
+                    />
+                  </div>
+                  {examples.length > 1 && (
+                    <button
+                      onClick={() => removeExample(index)}
+                      className="remove-btn"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button onClick={addExample} className="add-btn">
+                + Add Example
+              </button>
+            </div>
+          )}
+
+          {/* Advanced Section */}
+          {activeSection === 'advanced' && (
+            <div className="prompt-section">
+              <h3>⚙️ Advanced Settings</h3>
+              
+              <div className="form-group">
+                <label>Knowledge Scope</label>
+                <select
+                  value={knowledgeScope}
+                  onChange={(e) => setKnowledgeScope(e.target.value)}
+                  className="form-select"
+                >
+                  {knowledgeScopes.map(s => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Style Sample (for mirroring)</label>
+                <textarea
+                  value={styleSample}
+                  onChange={(e) => setStyleSample(e.target.value)}
+                  placeholder="Paste a sample of writing style you want the AI to mirror..."
+                  className="style-sample"
+                  rows={4}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Compile Button */}
+          <div className="compile-section">
+            <button
+              onClick={handleCompile}
+              disabled={loading || !userMessage.trim()}
+              className="compile-btn"
+            >
+              {loading ? 'Compiling...' : '🚀 Compile Prompt'}
+            </button>
+          </div>
+
+          {/* Results */}
+          {compiledPrompt && (
+            <div className="prompt-results">
+              <div className="results-header">
+                <h3>📦 Compiled Prompt</h3>
+                <div className="results-meta">
+                  <span className="token-badge">~{tokenEstimate} tokens</span>
+                </div>
+              </div>
+
+              {featuresUsed.length > 0 && (
+                <div className="features-used">
+                  <h4>Features Used ({featuresUsed.length})</h4>
+                  <div className="feature-tags">
+                    {featuresUsed.map((feature, i) => (
+                      <span key={i} className="feature-tag">{feature}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="compiled-prompt">
+                <pre>{compiledPrompt}</pre>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
