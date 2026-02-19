@@ -1,0 +1,108 @@
+{
+  "name": "Content Distribution Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "poll": "*/5 * * * *",
+        "resource": "folder",
+        "folderId": {
+          "__rl": true,
+          "value": "blog_posts",
+          "type": "string"
+        }
+      },
+      "name": "Check New Blog Posts",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [100, 200],
+      "credentials": {
+        "googleDriveOAuth2": {
+          "id": "google-drive-credential-id",
+          "name": "Google Drive Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.title }}",
+        "richText": {
+          "__rl": true,
+          "value": "markdown",
+          "type": "string"
+        }
+      },
+      "name": "Generate Social Post",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [300, 200],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-credential-id",
+          "name": "OpenAI Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.post }}"
+      },
+      "name": "Post to Twitter",
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 1,
+      "position": [500, 100],
+      "credentials": {
+        "twitterOAuth2": {
+          "id": "twitter-credential-id",
+          "name": "Twitter Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.post }}"
+      },
+      "name": "Post to LinkedIn",
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [500, 300],
+      "credentials": {
+        "linkedInOAuth2": {
+          "id": "linkedin-credential-id",
+          "name": "LinkedIn Account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Check New Blog Posts": {
+      "main": [
+        [
+          {
+            "node": "Generate Social Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Social Post": {
+      "main": [
+        [
+          {
+            "node": "Post to Twitter",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Post to LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

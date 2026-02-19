@@ -1,0 +1,19 @@
+{
+  "conversation_id": null,
+  "started_at": null,
+  "last_updated": null,
+  "current_task": null,
+  "task_status": null,
+  "where_we_left_off": null,
+  "next_steps": [],
+  "session_history": [],
+  "user_context": {
+    "name": null,
+    "preferences": {},
+    "sensitive_data_accessed": false
+  },
+  "privacy_level": "standard",
+  "data_retention": "session_only",
+  "read_only": true,
+  "_note": "This is the template/default state. Actual state stored in conversation_state.json"
+}

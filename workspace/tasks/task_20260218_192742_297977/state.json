@@ -1,0 +1,19 @@
+{
+  "task_id": "task_20260218_192742_297977",
+  "goal": "hey",
+  "category": "general",
+  "status": "FAILED",
+  "progress": 0,
+  "current_step": "",
+  "created_at": "2026-02-18T19:27:42.864184",
+  "started_at": "2026-02-18T19:28:54.379382",
+  "completed_at": "2026-02-18T22:59:59.026178",
+  "risk_score": 0,
+  "pending_approvals": [],
+  "files_created": [],
+  "logs_count": 1,
+  "error": "Task cancelled by user",
+  "result": null,
+  "paused": false,
+  "cancelled": true
+}

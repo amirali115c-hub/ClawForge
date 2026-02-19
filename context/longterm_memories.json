@@ -1,0 +1,73 @@
+{
+  "memories": [
+    {
+      "id": "7f7b06b8",
+      "content": "User name is Amir Ali",
+      "category": "personal",
+      "importance": 10,
+      "tags": [
+        "name",
+        "identity"
+      ],
+      "metadata": {},
+      "created_at": "2026-02-19T03:48:01.897063",
+      "last_accessed": "2026-02-19T03:48:01.898649",
+      "access_count": 0
+    },
+    {
+      "id": "f8704f19",
+      "content": "User lives in Lahore, Pakistan",
+      "category": "personal",
+      "importance": 8,
+      "tags": [
+        "location"
+      ],
+      "metadata": {},
+      "created_at": "2026-02-19T03:48:01.918551",
+      "last_accessed": "2026-02-19T03:48:01.918557",
+      "access_count": 0
+    },
+    {
+      "id": "339723c2",
+      "content": "User is a content writer and copywriter",
+      "category": "fact",
+      "importance": 7,
+      "tags": [
+        "profession",
+        "work"
+      ],
+      "metadata": {},
+      "created_at": "2026-02-19T03:48:01.923757",
+      "last_accessed": "2026-02-19T03:48:01.923765",
+      "access_count": 0
+    },
+    {
+      "id": "990934ef",
+      "content": "User prefers professional but premium tone on LinkedIn",
+      "category": "preference",
+      "importance": 6,
+      "tags": [
+        "writing",
+        "style"
+      ],
+      "metadata": {},
+      "created_at": "2026-02-19T03:48:01.928575",
+      "last_accessed": "2026-02-19T03:48:01.928582",
+      "access_count": 0
+    },
+    {
+      "id": "95be4760",
+      "content": "User is working on ClawForge AI Agent project",
+      "category": "context",
+      "importance": 9,
+      "tags": [
+        "project",
+        "ai"
+      ],
+      "metadata": {},
+      "created_at": "2026-02-19T03:48:01.933513",
+      "last_accessed": "2026-02-19T03:48:01.933519",
+      "access_count": 0
+    }
+  ]
+}

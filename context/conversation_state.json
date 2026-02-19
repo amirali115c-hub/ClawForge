@@ -1,0 +1,21 @@
+{
+  "conversation_id": "28e64677",
+  "started_at": "2026-02-19T04:45:55.382165",
+  "last_updated": "2026-02-19T04:45:55.393444",
+  "current_task": "Deploy Chat Online app",
+  "task_status": "waiting",
+  "where_we_left_off": "Fixed all bugs",
+  "next_steps": [
+    "Click Run",
+    "Click Deploy",
+    "Test chat"
+  ],
+  "session_history": [],
+  "user_context": {
+    "name": "Amir",
+    "preferences": {},
+    "sensitive_data_accessed": false
+  },
+  "privacy_level": "standard",
+  "data_retention": "session_only"
+}
