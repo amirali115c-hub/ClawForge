@@ -128,6 +128,48 @@ _You are Leo 2.0, a self-learning AI agent with NEURON v2.0 capabilities integra
 - **Conversation History** - Recent dialogue tracking
 - **Context Caching** - LRU cache for performance
 
+### 11. 😊 Sentiment Analysis
+- **Emotion Detection** - Happy, Sad, Angry, Frustrated, Excited, Confused
+- **Intensity Analysis** - Measures how strong the emotion is
+- **Toxicity Detection** - Flags harmful content
+- **Response Tone Adjustment** - Adapts responses based on user mood
+- **Real-Time Analysis** - Analyzes every message instantly
+
+### 12. 🔧 Tool Calling Engine
+- **Auto-Detection** - Detects when tools are needed
+- **Multiple Tool Types** - Search, Files, Code, Memory, Web, Calculate
+- **Confidence Scoring** - Shows how sure the system is
+- **Tool History** - Tracks which tools are used most
+- **Extensible** - Easy to add new tools
+
+### 13. 📝 Conversation Summarizer
+- **Auto-Summarization** - Converts long chats to short summaries
+- **Topic Extraction** - Identifies main topics discussed
+- **Key Points** - Extracts important points
+- **Resume Support** - Quick context for new sessions
+- **Sentiment Tracking** - Overall conversation mood
+
+### 14. 🗃️ Database Adapter (PostgreSQL/SQLite Ready)
+- **Unified Interface** - Works with SQLite now, PostgreSQL later
+- **User Management** - Create/manage user accounts
+- **Conversation Storage** - Permanent chat history
+- **Memory Storage** - Persistent long-term memories
+- **Settings Storage** - Per-user preferences
+
+### 15. 📚 Advanced RAG Engine
+- **Document Ingestion** - Add PDFs, text, docs to knowledge base
+- **Smart Chunking** - Splits documents intelligently
+- **Semantic Search** - Find relevant info quickly
+- **Source Tracking** - Know where answers come from
+- **Multi-Source** - Support multiple knowledge bases
+
+### 16. 📊 Structured Response Formatter
+- **Table Format** - Display data as tables
+- **Card Format** - Rich card-style display
+- **List Format** - Bullet and numbered lists
+- **Code Format** - Syntax-highlighted code
+- **Auto-Detection** - Detects what format user wants
+
 **How It Works:**
 1. Load session context
 2. Load relevant memories
@@ -336,6 +378,40 @@ backend/
 - `/api/deliver/format` - Format responses for channels
 - `/api/deliver/safety-check` - Check response safety
 - `/api/context/*` - Context management
+
+### NEW API Endpoints (HIGH + MEDIUM Priority):
+
+#### Sentiment Analysis:
+- `/api/sentiment/analyze` - Analyze text emotions
+- `/api/sentiment/tone` - Get response tone
+
+#### Tool Calling:
+- `/api/tools/detect` - Detect needed tool
+- `/api/tools/stats` - Tool usage statistics
+
+#### Conversation:
+- `/api/conversation/summarize` - Summarize chat
+- `/api/conversation/resume` - Get resume summary
+
+#### Database:
+- `/api/db/stats` - Database statistics
+- `/api/db/user/create` - Create user
+- `/api/db/conversations` - List conversations
+- `/api/db/conversation/create` - Create conversation
+- `/api/db/message/add` - Add message
+- `/api/db/messages` - Get messages
+- `/api/db/memory/save` - Save memory
+- `/api/db/memory/search` - Search memories
+
+#### RAG (Knowledge Base):
+- `/api/rag/stats` - RAG statistics
+- `/api/rag/document/add` - Add document
+- `/api/rag/search` - Search knowledge base
+- `/api/rag/documents` - List documents
+
+#### Formatting:
+- `/api/format/response` - Format as table/card/json
+- `/api/format/detect` - Auto-detect format
 
 ---
 
