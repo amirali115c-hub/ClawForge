@@ -165,7 +165,7 @@ function App() {
       const res = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: `You are ClawForge, a helpful AI assistant. User says: "${userMessage}"` }),
+        body: JSON.stringify({ message: `You are Leo 2.0, a self-learning AI agent. User says: "${userMessage}"` }),
         cache: 'no-cache'
       });
 
