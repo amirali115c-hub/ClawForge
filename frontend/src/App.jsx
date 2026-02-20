@@ -34,6 +34,11 @@ function App() {
   const [chatLoading, setChatLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
   const [models, setModels] = useState([
+    'auto',
+    'ollama/qwen2.5:3b',
+    'ollama/llama3.2:3b',
+    'ollama/qwen3:8b',
+    'ollama/phi3:mini',
     'z-ai/glm5',
     'qwen/qwen3.5-397b-a17b',
     'NVIDIABuild-Autogen-60',
@@ -43,6 +48,7 @@ function App() {
   const [selectedModel, setSelectedModel] = useState('qwen/qwen3.5-397b-a17b');
   const [apiStatus, setApiStatus] = useState({ provider: 'Checking...', status: 'checking' });
   const [memoryStats, setMemoryStats] = useState(null);
+  const [ramStats, setRamStats] = useState(null);
   const messagesEndRef = useRef(null);
   const heartbeatRef = useRef(null);
   const reconnectAttempts = useRef(0);
@@ -51,6 +57,7 @@ function App() {
   useEffect(() => {
     checkApiStatus();
     fetchMemoryStats();
+    fetchRamStats();
     startHeartbeat();
     return () => stopHeartbeat();
   }, []);
@@ -96,7 +103,7 @@ function App() {
 
   const attemptReconnect = async () => {
     try {
-      await fetch(`${API_BASE}/api/health', { 
+      await fetch(`${API_BASE}/api/health`, { 
         method: 'GET',
         cache: 'no-cache'
       });
@@ -135,6 +142,21 @@ function App() {
     }
   };
 
+  const fetchRamStats = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/memory/ram`, {
+        method: 'GET',
+        cache: 'no-cache'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRamStats(data);
+      }
+    } catch (e) {
+      // RAM info not available
+    }
+  };
+
   // Send message with auto-learning
   const sendChatMessage = async () => {
     if (!chatInput.trim() || chatLoading) return;
@@ -151,20 +173,42 @@ function App() {
 
     try {
       let endpoint = '/api/chat';
-      if (selectedModel === 'z-ai/glm5') endpoint = '/api/chat/glm5';
-      else if (selectedModel === 'qwen/qwen3.5-397b-a17b') endpoint = '/api/chat/qwen';
+      let useSmartRouter = false;
+      
+      // Use Auto mode (smart router) if selected
+      if (selectedModel === 'auto') {
+        endpoint = '/api/smart/switch';
+        useSmartRouter = true;
+      }
+      // Use Ollama for local models, NVIDIA for others
+      else if (selectedModel.startsWith('ollama/')) {
+        endpoint = '/api/chat/ollama';
+      } else if (selectedModel === 'z-ai/glm5') {
+        endpoint = '/api/chat/glm5';
+      } else if (selectedModel === 'qwen/qwen3.5-397b-a17b') {
+        endpoint = '/api/chat/qwen';
+      }
       
       const res = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: `You are Leo 2.0, a self-learning AI agent. User says: "${userMessage}"` }),
+        body: JSON.stringify({ message: userMessage }),
         cache: 'no-cache'
       });
 
       const data = await res.json();
       
       if (data.status === 'success') {
-        setChatMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+        let responseText = data.response;
+        let modelNote = '';
+        
+        // For smart router, show which model was used
+        if (useSmartRouter && data.model_used) {
+          const modelName = data.model_used.replace('ollama/', '');
+          modelNote = `\n\n🤖 *Auto-selected model: ${modelName}*`;
+        }
+        
+        setChatMessages(prev => [...prev, { role: 'assistant', content: responseText + modelNote }]);
         
         // Auto-learn from this interaction (NEURON v2.0)
         triggerAutoLearn(userMessage);
@@ -314,6 +358,45 @@ function App() {
           <h3>Total Messages</h3>
           <p>Across all sessions</p>
         </div>
+        <div className="dashboard-card ram-card">
+          <div className="stat" style={{ color: ramStats?.percent_used > 80 ? '#ff6b6b' : '#51cf66' }}>
+            {ramStats?.used_gb || 0}GB / {ramStats?.total_gb || 0}GB
+          </div>
+          <h3>RAM Usage</h3>
+          <p>{ramStats?.percent_used || 0}% {ramStats?.percent_used > 80 ? '⚠️ High' : '✅ OK'}</p>
+          <button 
+            className="clean-ram-btn"
+            onClick={async () => {
+              await fetch(`${API_BASE}/api/memory/cleanup?type=full`, { method: 'POST' });
+              fetchRamStats();
+            }}
+          >
+            🧹 Clean RAM
+          </button>
+        </div>
+        <div className="dashboard-card smart-router-card">
+          <div className="stat">🤖</div>
+          <h3>Smart Router</h3>
+          <p>{selectedModel === 'auto' ? '✅ Auto Mode Active' : '❌ Manual Mode'}</p>
+          {selectedModel === 'auto' && (
+            <button 
+              className="clean-ram-btn"
+              onClick={async () => {
+                try {
+                  const res = await fetch(`${API_BASE}/api/smart/stats`, { method: 'GET' });
+                  const data = await res.json();
+                  if (data.statistics) {
+                    alert(`Smart Router Stats:\n\nCurrent Model: ${data.current_model}\nTotal Analyses: ${data.statistics.total_analyses}\nTotal Switches: ${data.statistics.total_switches}\nSwitch Rate: ${data.statistics.switch_rate}%`);
+                  }
+                } catch (e) {
+                  console.log('Smart stats not available');
+                }
+              }}
+            >
+              📊 View Stats
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -344,7 +427,9 @@ function App() {
             className="model-select"
           >
             {models.map(m => (
-              <option key={m} value={m}>{m.split('/')[1] || m}</option>
+              <option key={m} value={m}>
+                {m === 'auto' ? '🤖 Auto (Smart)' : (m.split('/')[1] || m)}
+              </option>
             ))}
           </select>
           <span className={`api-status ${apiStatus.status}`}>

@@ -744,3 +744,64 @@ body {
   font-size: 0.85rem;
 }
 
+/* RAM Card */
+.ram-card {
+  background: rgba(81, 207, 102, 0.1);
+  border: 1px solid rgba(81, 207, 102, 0.3);
+}
+
+.ram-card .stat {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.ram-card p {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.clean-ram-btn {
+  margin-top: 0.75rem;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  background: rgba(81, 207, 102, 0.2);
+  border: 1px solid rgba(81, 207, 102, 0.4);
+  color: #51cf66;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.clean-ram-btn:hover {
+  background: rgba(81, 207, 102, 0.3);
+  border-color: #51cf66;
+}
+
+/* Smart Router Card */
+.smart-router-card {
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.smart-router-card .stat {
+  font-size: 2rem;
+}
+
+.smart-router-card p {
+  color: #a78bfa;
+}
+
+.smart-router-card .clean-ram-btn {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: #a78bfa;
+}
+
+.smart-router-card .clean-ram-btn:hover {
+  background: rgba(139, 92, 246, 0.3);
+  border-color: #a78bfa;
+}
+

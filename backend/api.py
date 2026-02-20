@@ -143,19 +143,19 @@ async def lifespan(app: FastAPI):
             sys.stderr.write(f"[CONTEXT] Error: {e}\n")
             sys.stderr.flush()
     
-    print("ClawForge API started")
+    print("Leo 2.0 API started")
     print("   Dashboard: http://127.0.0.1:7860")
     print("   API Docs: http://127.0.0.1:7860/docs")
     
     yield
     
     # Cleanup on shutdown
-    print("ClawForge API stopped")
+    print("Leo 2.0 API stopped")
 
 app = FastAPI(
-    title="ClawForge API",
-    description="Production-grade Autonomous AI Agent Framework",
-    version="4.0",
+    title="Leo 2.0 API",
+    description="Self-Learning AI Agent with NEURON v2.0",
+    version="2.0",
     lifespan=lifespan
 )
 
@@ -238,8 +238,8 @@ async def root():
     """Health check endpoint."""
     return {
         "status": "healthy",
-        "agent": "ClawForge",
-        "version": "4.0",
+        "agent": "Leo 2.0",
+        "version": "2.0",
         "timestamp": datetime.utcnow().isoformat()
     }
 
@@ -263,8 +263,8 @@ async def get_status():
         pass
     
     return {
-        "agent": "ClawForge",
-        "version": "4.0",
+        "agent": "Leo 2.0",
+        "version": "2.0",
         "security_mode": "LOCKED",
         "active_model": None,
         "risk_score": 0,
@@ -1251,6 +1251,169 @@ try:
     print("[NEURON] NEURON v2.0 integration loaded successfully")
 except ImportError as e:
     print(f"[NEURON] NEURON integration not available: {e}")
+
+# ============================================================================
+# AUTO MEMORY MANAGEMENT
+# ============================================================================
+
+try:
+    from memory_manager import MemoryMonitor, add_memory_routes
+    memory_monitor = MemoryMonitor()
+    add_memory_routes(app)
+    print("[MEMORY-MGR] Auto Memory Manager loaded")
+    MEMORY_MGR_AVAILABLE = True
+except ImportError as e:
+    print(f"[MEMORY-MGR] Warning: Memory Manager not available: {e}")
+    MEMORY_MGR_AVAILABLE = False
+
+# ============================================================================
+# OLLAMA LOCAL ENDPOINT (Fast, Local)
+# ============================================================================
+
+@app.post("/api/chat/ollama")
+async def chat_ollama(request: ChatRequest):
+    """
+    Chat with local Ollama model (qwen3:8b or others).
+    Fast, offline, free - uses ADVANCED_SYSTEM_PROMPT.
+    """
+    from ollama_client import OllamaClient
+    
+    try:
+        client = OllamaClient()
+        
+        messages = [
+            {"role": "system", "content": ADVANCED_SYSTEM_PROMPT},
+            {"role": "user", "content": request.message}
+        ]
+        
+        response = client.chat(messages)
+        
+        return {
+            "status": "success",
+            "response": response,
+            "model": client.get_active_model() or "qwen3:8b",
+            "provider": "Ollama (Local)"
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "message": "Failed to communicate with Ollama"
+        }
+
+# ============================================================================
+# SMART MODEL ROUTER (Auto-Switching)
+# ============================================================================
+
+try:
+    from smart_router import SmartModelRouter, create_router
+    smart_router = create_router()
+    SMART_ROUTER_AVAILABLE = True
+    print("[SMART-ROUTER] Intelligent Model Router loaded")
+except ImportError as e:
+    print(f"[SMART-ROUTER] Warning: Smart Router not available: {e}")
+    SMART_ROUTER_AVAILABLE = False
+
+@app.post("/api/smart/route")
+async def smart_route(request: ChatRequest):
+    """
+    Analyze request and auto-select best model.
+    Returns routing decision without switching.
+    """
+    if not SMART_ROUTER_AVAILABLE:
+        return {
+            "status": "error",
+            "message": "Smart Router not available"
+        }
+    
+    result = smart_router.analyze_and_route(
+        message=request.message,
+        context=""
+    )
+    
+    return {
+        "status": "success",
+        "routing": result,
+        "current_model": smart_router.current_model
+    }
+
+@app.post("/api/smart/switch")
+async def smart_switch(request: ChatRequest):
+    """
+    Auto-switch to optimal model based on request.
+    Returns the response from the newly selected model.
+    """
+    if not SMART_ROUTER_AVAILABLE:
+        return {
+            "status": "error",
+            "message": "Smart Router not available"
+        }
+    
+    # Analyze and get routing decision
+    routing = smart_router.analyze_and_route(
+        message=request.message,
+        context=""
+    )
+    
+    # Switch model if needed
+    if routing["needs_switch"]:
+        from ollama_client import OllamaClient
+        client = OllamaClient()
+        switch_result = client.set_model(routing["model_recommendation"])
+        
+        if switch_result["status"] == "error":
+            # Fallback to current model if switch fails
+            routing["model_recommendation"] = smart_router.current_model
+    
+    # Chat with selected model
+    from ollama_client import OllamaClient
+    client = OllamaClient()
+    
+    messages = [
+        {"role": "system", "content": ADVANCED_SYSTEM_PROMPT},
+        {"role": "user", "content": request.message}
+    ]
+    
+    response = client.chat(messages, routing["model_recommendation"])
+    
+    return {
+        "status": "success",
+        "response": response.get("response", response.get("error", "Unknown error")),
+        "model_used": routing["model_recommendation"],
+        "routing": {
+            "task_type": routing["task_type"],
+            "complexity": routing["complexity"],
+            "switch_reason": routing.get("switch_reason"),
+            "confidence": routing["confidence"]
+        }
+    }
+
+@app.get("/api/smart/stats")
+async def smart_stats():
+    """Get smart router statistics."""
+    if not SMART_ROUTER_AVAILABLE:
+        return {
+            "status": "error",
+            "message": "Smart Router not available"
+        }
+    
+    return {
+        "status": "success",
+        "statistics": smart_router.get_statistics(),
+        "current_model": smart_router.current_model
+    }
+
+@app.get("/api/smart/status")
+async def smart_status():
+    """Get smart router status."""
+    if not SMART_ROUTER_AVAILABLE:
+        return {
+            "router_active": False,
+            "message": "Smart Router not available"
+        }
+    
+    return smart_router.get_status()
 
 # ============================================================================
 # MAIN ENTRY POINT
