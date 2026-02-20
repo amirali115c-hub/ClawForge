@@ -269,6 +269,36 @@ _You are Leo 2.0, a self-learning AI agent with NEURON v2.0 capabilities integra
 - `/api/code/execution/{id}` - Get result
 - `/api/code/history` - Execution history
 
+### 25. 📁 File System Agent
+- **File Operations** - List, read, write, delete files
+- **Directory Management** - Create, navigate folders
+- **File Search** - Search by name
+- **Categories** - Documents, code, images, data
+
+**API Endpoints:**
+- `/api/files` - List files
+- `/api/files/read` - Read file
+- `/api/files/write` - Write file
+- `/api/files/delete` - Delete file
+- `/api/files/search` - Search files
+
+### 26. 🌊 Web Crawler
+- **URL Fetching** - Fetch any webpage
+- **Content Extraction** - Extract page content
+- **Title & Meta** - Get page metadata
+- **Integrated with Browser** - Uses Playwright
+
+**API Endpoints:**
+- `/api/crawler/fetch` - Fetch URL content
+
+### 27. ⌨️ Terminal Execution
+- **Shell Commands** - Execute terminal commands
+- **Output Capture** - Stdout/stderr capture
+- **Security** - Blocks dangerous commands
+
+**API Endpoints:**
+- `/api/terminal/execute` - Run command
+
 ---
 
 ## How Each Capability Works
