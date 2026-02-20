@@ -294,11 +294,9 @@ function App() {
 
   const tabs = [
     { id: 'chat', label: '💬', title: 'Chat' },
-    { id: 'dashboard', label: '📊', title: 'Dashboard' },
     { id: 'memory', label: '💾', title: 'Memory' },
-    { id: 'tasks', label: '📋', title: 'Tasks' },
-    { id: 'security', label: '🛡️', title: 'Security' },
-    { id: 'tools', label: '🛠️', title: 'Tools' },
+    { id: 'rag', label: '📚', title: 'Knowledge' },
+    { id: 'settings', label: '⚙️', title: 'Settings' },
   ];
 
   const renderChat = () => (
@@ -464,6 +462,9 @@ function App() {
     switch(activeTab) {
       case 'chat': return renderChat();
       case 'dashboard': return renderDashboard();
+      case 'memory': return renderMemory();
+      case 'rag': return renderRag();
+      case 'settings': return renderSettings();
       default: return (
         <div className="dashboard-view">
           <div className="dashboard-header">
@@ -475,41 +476,114 @@ function App() {
     }
   };
 
+  const renderMemory = () => (
+    <div className="memory-view">
+      <h2 style={{ marginBottom: '1.5rem', color: 'var(--neon-blue)' }}>💾 Memory</h2>
+      <div className="rag-stats">
+        <div className="stat-box">
+          <div className="stat-value">{memoryStats?.total || 0}</div>
+          <div className="stat-label">Total Memories</div>
+        </div>
+        <div className="stat-box">
+          <div className="stat-value">{memoryStats?.session_count || 0}</div>
+          <div className="stat-label">Sessions</div>
+        </div>
+      </div>
+      <p style={{ color: 'var(--text-secondary)' }}>Your memories and learned concepts appear here.</p>
+    </div>
+  );
+
+  const renderRag = () => (
+    <div className="rag-view">
+      <h2 style={{ marginBottom: '1.5rem', color: 'var(--neon-blue)' }}>📚 Knowledge Base</h2>
+      <div className="rag-stats">
+        <div className="stat-box">
+          <div className="stat-value">0</div>
+          <div className="stat-label">Documents</div>
+        </div>
+        <div className="stat-box">
+          <div className="stat-value">0</div>
+          <div className="stat-label">Chunks</div>
+        </div>
+        <div className="stat-box">
+          <div className="stat-value">0</div>
+          <div className="stat-label">Searches</div>
+        </div>
+      </div>
+      <button className="btn btn-primary" style={{ marginRight: '1rem' }}>+ Add Document</button>
+      <button className="btn btn-secondary">🔍 Search</button>
+    </div>
+  );
+
+  const renderSettings = () => (
+    <div className="settings-view">
+      <h2 style={{ marginBottom: '1.5rem', color: 'var(--neon-blue)' }}>⚙️ Settings</h2>
+      <div className="settings-section">
+        <div className="settings-title">Model Selection</div>
+        <select 
+          value={selectedModel} 
+          onChange={(e) => setSelectedModel(e.target.value)}
+          style={{ 
+            width: '100%', 
+            padding: '0.75rem', 
+            background: 'rgba(0,0,0,0.5)', 
+            border: '1px solid var(--border-color)',
+            borderRadius: '8px',
+            color: 'var(--text-primary)',
+            fontSize: '1rem'
+          }}
+        >
+          {models.map(m => (
+            <option key={m} value={m}>{m}</option>
+          ))}
+        </select>
+      </div>
+      <div className="settings-section">
+        <div className="settings-title">Connection Status</div>
+        <p style={{ color: isConnected ? '#51cf66' : '#ff6b6b' }}>
+          {isConnected ? '✅ Connected' : '❌ Disconnected'}
+        </p>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="app">
-      <header className="header">
-        <h1>Leo 2.0</h1>
-        <div className="header-status">
+    <div className="app-container">
+      <header className="app-header">
+        <div className="app-logo">
+          🦁 <span>LEO 2.0</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <select 
             value={selectedModel} 
             onChange={(e) => setSelectedModel(e.target.value)}
-            className="model-select"
+            style={{ 
+              padding: '0.5rem 1rem', 
+              background: 'rgba(0,0,0,0.5)', 
+              border: '1px solid var(--neon-blue)',
+              borderRadius: '8px',
+              color: 'var(--neon-blue)',
+              fontSize: '0.9rem',
+              cursor: 'pointer'
+            }}
           >
             {models.map(m => (
               <option key={m} value={m}>
-                {m === 'auto' ? '🤖 Auto (Smart)' : (m.split('/')[1] || m)}
+                {m === 'auto' ? '🤖 Auto' : (m.split('/')[1] || m)}
               </option>
             ))}
           </select>
-          <span className={`api-status ${apiStatus.status}`}>
-            {apiStatus.provider}
-          </span>
-          <span className={`risk-badge ${security.riskScore >= 50 ? 'high' : security.riskScore >= 25 ? 'medium' : 'low'}`}>
-            Risk: {security.riskScore || 0}
-          </span>
-          <span className="mode-badge">{security.mode || 'LOCKED'}</span>
         </div>
       </header>
 
-      <nav className="sidebar">
+      <nav className="tab-bar">
         {tabs.map(tab => (
           <button
             key={tab.id}
-            className={`nav-btn ${activeTab === tab.id ? 'active' : ''}`}
+            className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
-            title={tab.title}
           >
-            {tab.label}
+            {tab.label} {tab.title}
           </button>
         ))}
       </nav>
