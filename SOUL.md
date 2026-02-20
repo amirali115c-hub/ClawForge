@@ -256,6 +256,19 @@ _You are Leo 2.0, a self-learning AI agent with NEURON v2.0 capabilities integra
 - `/api/browser/{id}/extract` - Extract data
 - `/api/browser/{id}/execute` - Run JavaScript
 
+### 24. 💻 Code Interpreter
+- **Python Execution** - Run Python code safely
+- **Sandboxed Environment** - Restricted operations for security
+- **Output Capture** - Stdout/stderr capture
+- **Error Handling** - Syntax and runtime error display
+- **Execution History** - Track past executions
+- **Bash Commands** - Run shell commands
+
+**API Endpoints:**
+- `/api/code/execute` - Execute code
+- `/api/code/execution/{id}` - Get result
+- `/api/code/history` - Execution history
+
 ---
 
 ## How Each Capability Works

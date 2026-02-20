@@ -426,6 +426,7 @@ function App() {
     { id: 'rag', label: '📚', title: 'Knowledge' },
     { id: 'security', label: '🛡️', title: 'Security' },
     { id: 'browser', label: '🌐', title: 'Browser' },
+    { id: 'code', label: '💻', title: 'Code' },
     { id: 'settings', label: '⚙️', title: 'Settings' },
   ];
 
@@ -596,6 +597,7 @@ function App() {
       case 'rag': return renderRag();
       case 'security': return renderSecurity();
       case 'browser': return renderBrowser();
+      case 'code': return renderCode();
       case 'settings': return renderSettings();
       default: return (
         <div className="dashboard-view">
@@ -786,6 +788,95 @@ function App() {
               {sessionId ? 'Click "Go" to navigate' : 'Click "Start Browser" to begin'}
             </div>
           )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderCode = () => {
+    const [code, setCode] = useState('print("Hello, World!")\n# Write your Python code here');
+    const [output, setOutput] = useState('');
+    const [isRunning, setIsRunning] = useState(false);
+
+    const runCode = async () => {
+      setIsRunning(true);
+      setOutput('Running...');
+      try {
+        const res = await fetch(`${API_BASE}/api/code/execute`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, language: 'python' })
+        });
+        const data = await res.json();
+        setOutput(data.output || data.error || 'No output');
+      } catch (e) {
+        setOutput('Error: ' + e.message);
+      }
+      setIsRunning(false);
+    };
+
+    return (
+      <div className="code-view" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <h2 style={{ marginBottom: '1rem', color: 'var(--neon-blue)' }}>💻 Code Interpreter</h2>
+        
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+          <button 
+            onClick={runCode} 
+            disabled={isRunning}
+            className="neon-btn"
+            style={{ padding: '0.6rem 1.2rem', opacity: isRunning ? 0.7 : 1 }}
+          >
+            {isRunning ? '⏳ Running...' : '▶ Run Code'}
+          </button>
+          <button 
+            onClick={() => setCode('')} 
+            className="neon-btn"
+            style={{ padding: '0.6rem 1rem', background: '#ff6b6b' }}
+          >
+            🗑️ Clear
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', gap: '1rem', flex: 1, minHeight: 0 }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <label style={{ marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Python Code:</label>
+            <textarea
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              style={{
+                flex: 1,
+                padding: '1rem',
+                borderRadius: '8px',
+                border: '1px solid #333',
+                background: '#1a1a2e',
+                color: '#e0e0e0',
+                fontFamily: 'monospace',
+                fontSize: '0.9rem',
+                resize: 'none'
+              }}
+              placeholder="Write your Python code here..."
+            />
+          </div>
+          
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <label style={{ marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Output:</label>
+            <pre
+              style={{
+                flex: 1,
+                padding: '1rem',
+                borderRadius: '8px',
+                border: '1px solid #333',
+                background: '#0a0a1a',
+                color: output.includes('Error') ? '#ff6b6b' : '#51cf66',
+                fontFamily: 'monospace',
+                fontSize: '0.85rem',
+                overflow: 'auto',
+                margin: 0
+              }}
+            >
+              {output || 'Output will appear here...'}
+            </pre>
+          </div>
         </div>
       </div>
     );

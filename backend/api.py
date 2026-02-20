@@ -3257,6 +3257,75 @@ async def list_browser_sessions():
     sessions = browser_engine.get_active_sessions()
     return {"status": "ok", "sessions": sessions}
 
+# Code Interpreter Engine
+CODE_INTERPRETER_AVAILABLE = False
+try:
+    from code_interpreter import CodeInterpreterEngine, get_code_interpreter
+    CODE_INTERPRETER_AVAILABLE = True
+    print("[CODE] Code Interpreter Engine loaded")
+except ImportError as e:
+    print(f"[CODE] Warning: {e}")
+
+code_interpreter = None
+
+@app.post("/api/code/execute")
+async def execute_code(request: Request):
+    """Execute code."""
+    global code_interpreter
+    if not CODE_INTERPRETER_AVAILABLE:
+        return {"error": "Code interpreter not available"}
+    
+    if code_interpreter is None:
+        code_interpreter = get_code_interpreter()
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    code = body.get("code", "")
+    language = body.get("language", "python")
+    
+    if not code:
+        return {"error": "Code required"}
+    
+    result = code_interpreter.execute(code, language)
+    return result
+
+@app.get("/api/code/execution/{execution_id}")
+async def get_execution(execution_id: str):
+    """Get execution result."""
+    global code_interpreter
+    if not CODE_INTERPRETER_AVAILABLE or code_interpreter is None:
+        return {"error": "Code interpreter not available"}
+    
+    execution = code_interpreter.get_execution(execution_id)
+    if not execution:
+        return {"error": "Execution not found"}
+    
+    return {
+        "status": "ok",
+        "execution": {
+            "id": execution.execution_id,
+            "language": execution.language,
+            "code": execution.code,
+            "status": execution.status.value,
+            "output": execution.output,
+            "error": execution.error,
+            "execution_time": execution.execution_time
+        }
+    }
+
+@app.get("/api/code/history")
+async def get_code_history(limit: int = 10):
+    """Get code execution history."""
+    global code_interpreter
+    if not CODE_INTERPRETER_AVAILABLE or code_interpreter is None:
+        return {"error": "Code interpreter not available"}
+    
+    history = code_interpreter.get_history(limit)
+    return {"status": "ok", "history": history}
+
 # Gradio UI Route
 @app.get("/gradio")
 async def serve_gradio():
