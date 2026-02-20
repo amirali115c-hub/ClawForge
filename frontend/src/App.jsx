@@ -425,6 +425,9 @@ function App() {
     { id: 'memory', label: '💾', title: 'Memory' },
     { id: 'rag', label: '📚', title: 'Knowledge' },
     { id: 'security', label: '🛡️', title: 'Security' },
+    { id: 'browser', label: '🌐', title: 'Browser' },
+    { id: 'code', label: '💻', title: 'Code' },
+    { id: 'files', label: '📁', title: 'Files' },
     { id: 'settings', label: '⚙️', title: 'Settings' },
   ];
 
@@ -608,6 +611,27 @@ function App() {
       </div>
       <button className="btn btn-primary" style={{ marginRight: '1rem' }}>+ Add Document</button>
       <button className="btn btn-secondary">🔍 Search</button>
+    </div>
+  );
+
+  const renderBrowser = () => (
+    <div className="browser-view">
+      <h2 style={{ marginBottom: '1.5rem', color: 'var(--neon-blue)' }}>🌐 Browser Automation</h2>
+      <p>Browser automation API available at /api/browser/*</p>
+    </div>
+  );
+
+  const renderCode = () => (
+    <div className="code-view">
+      <h2 style={{ marginBottom: '1.5rem', color: 'var(--neon-blue)' }}>💻 Code Interpreter</h2>
+      <p>Python code execution API available at /api/code/*</p>
+    </div>
+  );
+
+  const renderFiles = () => (
+    <div className="files-view">
+      <h2 style={{ marginBottom: '1.5rem', color: 'var(--neon-blue)' }}>📁 File System</h2>
+      <p>File operations API available at /api/files/*</p>
     </div>
   );
 
