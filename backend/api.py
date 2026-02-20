@@ -3066,6 +3066,33 @@ async def export_custodian_data():
     
     return {"status": "success", "export": custodian.export_all_data()}
 
+# Dashboard Status
+@app.get("/api/dashboard/status")
+async def get_dashboard_status():
+    """Get overall system status for dashboard."""
+    status = {
+        "leo_version": "2.0",
+        "neuron_version": "v2.0",
+        "features": {
+            "workflow": WORKFLOW_AVAILABLE,
+            "thinking": THINKING_AVAILABLE,
+            "tool_calling": TOOL_CALLING_AVAILABLE,
+            "multi_agent": MULTI_AGENT_AVAILABLE
+        }
+    }
+    
+    # Get agent status if available
+    if MULTI_AGENT_AVAILABLE and multi_agent_system:
+        status["agents"] = multi_agent_system.get_system_status()
+    
+    return {"status": "ok", "dashboard": status}
+
+# Gradio UI Route
+@app.get("/gradio")
+async def serve_gradio():
+    """Serve Gradio UI."""
+    return {"message": "Gradio UI available at port 7860", "gradio_available": False}
+
 # ============================================================================
 # MAIN ENTRY POINT
 # ============================================================================
