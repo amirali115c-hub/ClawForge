@@ -407,7 +407,8 @@ class SmartModelRouter:
         for model in self.model_order:
             if model != primary:
                 capabilities = MODEL_CAPABILITIES.get(model, {})
-                if capabilities.get("complexity_limit", ComplexityLevel.EXPERT) >= complexity:
+                model_limit = capabilities.get("complexity_limit", ComplexityLevel.EXPERT)
+                if model_limit.value >= complexity.value:
                     alternatives.append(model)
         
         return alternatives[:2]  # Return max 2 alternatives
@@ -495,20 +496,20 @@ if __name__ == "__main__":
         "Create a comprehensive roadmap for building a SaaS product",
     ]
     
-    print("🦁 Smart Model Router - Test")
+    print(" Smart Model Router - Test")
     print("=" * 60)
     
     for msg in test_messages:
         result = router.analyze_and_route(msg)
-        print(f"\n📝 Message: {msg[:50]}...")
+        print(f"\n Message: {msg[:50]}...")
         print(f"   Task: {result['task_type']}")
         print(f"   Complexity: {result['complexity_label']}")
         print(f"   Model: {result['model_recommendation']}")
-        print(f"   Switch: {'✅' if result['needs_switch'] else '❌'}")
+        print(f"   Switch: {'' if result['needs_switch'] else ''}")
         print(f"   Confidence: {result['confidence']:.0%}")
     
     print("\n" + "=" * 60)
-    print("\n📊 Statistics:")
+    print("\n Statistics:")
     stats = router.get_statistics()
     for key, value in stats.items():
         if key != "task_distribution" and key != "complexity_distribution":

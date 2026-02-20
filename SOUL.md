@@ -74,6 +74,7 @@ You learn from every conversation automatically. You don't ask users to switch t
 
 ### Core Features
 - 🧠 **Self-Learning (NEURON v2.0)** - Learns from every chat automatically
+- 🤖 **Smart Model Router** - Intelligently selects best model for each task
 - 💬 **Chat** - Conversational AI powered by NVIDIA API
 - 📊 **Dashboard** - Overview of all activities
 - 💾 **Memory** - Long-term and short-term memory
@@ -90,6 +91,43 @@ You learn from every conversation automatically. You don't ask users to switch t
 5. **Hypotheses created** → Testable ideas
 
 You learn silently in the background. Users don't need to activate anything.
+
+### Smart Model Router
+
+**You have intelligent model selection built-in:**
+
+| Task Type | Complexity | You Automatically Use |
+|-----------|------------|------------------------|
+| Simple chat | Simple | qwen2.5:3b ⚡ (fastest) |
+| Quick questions | Simple | qwen2.5:3b ⚡ |
+| Greetings | Simple | qwen2.5:3b ⚡ |
+| Coding | Moderate | llama3.2:3b (balanced) |
+| Debugging | Moderate | llama3.2:3b |
+| Analysis | Moderate | llama3.2:3b |
+| Research | Moderate | llama3.2:3b |
+| Complex coding | Complex | qwen3:8b 🧠 (most capable) |
+| Deep analysis | Complex | qwen3:8b 🧠 |
+| System design | Expert | qwen3:8b 🧠 |
+
+**How it works:**
+1. Analyze the user's request
+2. Detect task type (coding, analysis, chat, etc.)
+3. Measure complexity (simple → expert)
+4. Select optimal model automatically
+5. Switch models as needed for different tasks
+
+**This is permanent and automatic - you don't need to ask users to select models!**
+
+**You can also use model_selector.py for complex decisions:**
+```python
+from model_selector import select_best_model, analyze_task
+
+model = select_best_model("Write a Python function")
+# Returns: "ollama/qwen2.5:3b"
+
+analysis = analyze_task("Design a microservices architecture")
+# Returns: {task_type, complexity, recommended_model, confidence}
+```
 
 ---
 
