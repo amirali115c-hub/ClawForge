@@ -250,6 +250,48 @@ function App() {
     }
   };
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('source', file.name);
+    formData.append('metadata', JSON.stringify({
+      type: file.type,
+      size: file.size
+    }));
+    
+    try {
+      const response = await fetch(`${API_BASE}/api/rag/document/add`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const result = await response.json();
+      
+      if (result.status === 'ok') {
+        setChatMessages(prev => [...prev, { 
+          role: 'system', 
+          content: `📎 File "${file.name}" uploaded to knowledge base! (${file.size} bytes)` 
+        }]);
+      } else {
+        setChatMessages(prev => [...prev, { 
+          role: 'system', 
+          content: `❌ Upload failed: ${result.error || 'Unknown error'}` 
+        }]);
+      }
+    } catch (err) {
+      setChatMessages(prev => [...prev, { 
+        role: 'system', 
+        content: `❌ Upload error: ${err.message}` 
+      }]);
+    }
+    
+    // Reset input
+    e.target.value = '';
+  };
+
   const tabs = [
     { id: 'chat', label: '💬', title: 'Chat' },
     { id: 'dashboard', label: '📊', title: 'Dashboard' },
@@ -302,6 +344,20 @@ function App() {
             className="chat-input"
             rows={1}
           />
+          <input
+            type="file"
+            id="file-upload"
+            style={{ display: 'none' }}
+            onChange={handleFileUpload}
+            accept=".txt,.pdf,.md,.json,.py,.js,.html,.css,.csv"
+          />
+          <button 
+            className="upload-btn"
+            onClick={() => document.getElementById('file-upload').click()}
+            title="Upload document to knowledge base"
+          >
+            📎
+          </button>
           <button 
             onClick={sendChatMessage} 
             disabled={!chatInput.trim() || chatLoading || !isConnected}

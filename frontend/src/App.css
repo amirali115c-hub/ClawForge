@@ -320,6 +320,25 @@ body {
   box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.1);
 }
 
+.upload-btn {
+  background: linear-gradient(135deg, #238636, #2ea043);
+  border: none;
+  color: white;
+  padding: 0.75rem;
+  border-radius: 10px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-btn:hover {
+  background: linear-gradient(135deg, #2ea043, #3fb950);
+  transform: scale(1.05);
+}
+
 .chat-input {
   flex: 1;
   background: transparent;
