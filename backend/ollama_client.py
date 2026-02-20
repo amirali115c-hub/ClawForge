@@ -22,13 +22,9 @@ OLLAMA_API_TAGS = f"{OLLAMA_BASE_URL}/api/tags"
 # ============================================================================
 
 SUPPORTED_MODELS = [
-    "qwen3:8b",
-    "qwen3:4b",
-    "qwen2.5:7b",
-    "phi3:mini",
-    "llama3.2:3b",
-    "llama3.1:8b",
-    "mistral:7b",
+    "qwen2.5:3b",      # 2GB - Best for limited memory
+    "llama3.2:3b",     # 2GB - Good alternative  
+    "phi3:mini",       # 2GB - Fast & efficient
 ]
 
 # ============================================================================
@@ -78,7 +74,7 @@ class OllamaClient:
     
     def __init__(self, base_url: str = OLLAMA_BASE_URL):
         self.base_url = base_url
-        self.active_model = "qwen3:8b"  # Default model
+        self.active_model = "qwen2.5:3b"  # Default model - 2GB, works with limited RAM
         self.request_timeout = 120.0  # seconds
     
     # ============================================================================
