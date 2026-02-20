@@ -679,6 +679,70 @@ async def delete_rag_document(doc_id: str):
     success = engine.delete_document(doc_id)
     return {"status": "ok" if success else "error", "deleted": success}
 
+# Workflow Engine (LangGraph-style)
+WORKFLOW_AVAILABLE = False
+try:
+    from workflow_engine import LangGraphWorkflow, WorkflowTemplates, get_workflow_engine
+    WORKFLOW_AVAILABLE = True
+    print("[WORKFLOW] LangGraph-style Workflow Engine loaded")
+    
+    # Pre-built workflows
+    workflows = {
+        'research': WorkflowTemplates.research_workflow(),
+        'coding': WorkflowTemplates.coding_workflow()
+    }
+except ImportError as e:
+    print(f"[WORKFLOW] Warning: {e}")
+    workflows = {}
+
+@app.get("/api/workflow/templates")
+async def get_workflow_templates():
+    """Get available workflow templates."""
+    if not WORKFLOW_AVAILABLE:
+        return {"error": "Workflow engine not available"}
+    
+    return {
+        "status": "ok",
+        "templates": list(workflows.keys())
+    }
+
+@app.post("/api/workflow/run")
+async def run_workflow(request: Request):
+    """Run a workflow."""
+    if not WORKFLOW_AVAILABLE:
+        return {"error": "Workflow engine not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    template_name = body.get("template", "research")
+    initial_state = body.get("state", {})
+    
+    if template_name not in workflows:
+        return {"error": f"Template '{template_name}' not found"}
+    
+    workflow = workflows[template_name]
+    
+    try:
+        result = await workflow.run(initial_state)
+        return {"status": "ok", "result": result}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.get("/api/workflow/status")
+async def get_workflow_status():
+    """Get workflow status."""
+    if not WORKFLOW_AVAILABLE:
+        return {"error": "Workflow engine not available"}
+    
+    statuses = {}
+    for name, wf in workflows.items():
+        statuses[name] = wf.get_status()
+    
+    return {"status": "ok", "workflows": statuses}
+
 # Structured Response Formatter
 STRUCTURED_AVAILABLE = False
 try:
