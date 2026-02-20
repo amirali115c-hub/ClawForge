@@ -1,14 +1,17 @@
 """
-Leo 2.0 - Tool Calling Engine
-=============================
-Automatically detects when to use tools and executes them.
+Leo 2.0 - OpenAI-Style Tool Calling Engine
+==========================================
+Enhanced tool detection and execution with function calling patterns.
+Based on OpenAI's function calling API.
 """
 
 import re
 import json
+import asyncio
 from typing import Dict, List, Optional, Any, Callable
 from enum import Enum
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
 
 
 class ToolType(Enum):
@@ -20,174 +23,315 @@ class ToolType(Enum):
     MEMORY = "memory"
     CALCULATE = "calculate"
     TRANSLATE = "translate"
+    CUSTOM = "custom"
     NONE = "none"
 
 
 @dataclass
+class ToolParameter:
+    """A parameter definition for a tool."""
+    name: str
+    type: str
+    description: str
+    required: bool = False
+    default: Any = None
+    enum: List[str] = None
+
+
+@dataclass
+class ToolDefinition:
+    """Definition of a callable tool (OpenAI-style)."""
+    name: str
+    description: str
+    parameters: List[ToolParameter] = field(default_factory=list)
+    function: Callable = None
+    category: str = "general"
+
+
+@dataclass
 class ToolCall:
-    tool: ToolType
+    """A detected tool call."""
+    tool_name: str
+    arguments: Dict[str, Any]
     confidence: float
-    reason: str
-    parameters: Dict[str, Any]
+    reasoning: str
+    result: Any = None
+    error: str = None
+    executed_at: str = field(default_factory=lambda: datetime.now().isoformat())
 
 
-class ToolCallingEngine:
-    """Detects when to call tools based on user input."""
+class OpenAIToolCallingEngine:
+    """
+    OpenAI-style function calling engine.
     
-    # Intent patterns for tool detection
-    TOOL_PATTERNS = {
-        ToolType.SEARCH: [
-            r'search (?:for |)(.+)',
-            r'find (?:information about |)(.+)',
-            r'look up (.+)',
-            r'what is (.+)',
-            r'who is (.+)',
-            r'how to (.+)',
-            r'lookup (.+)',
-            r'googling (.+)',
-        ],
-        ToolType.FILE_READ: [
-            r'read (?:the |)(?:file |)(.+\.(?:txt|py|js|md|json|html|css))',
-            r'show (?:me |)(?:the |)(?:content of |)(.+\.(?:txt|py|js|md|json|html|css))',
-            r'open (?:file |)(.+\.(?:txt|py|js|md|json|html|css))',
-            r'what.?s in (.+)',
-            r'list (?:files |)(?:in |)(.+)',
-        ],
-        ToolType.FILE_WRITE: [
-            r'write (?:to |)(?:file |)(.+)',
-            r'save (?:to |)(?:file |)(.+)',
-            r'create (?:file |)(.+)',
-            r'make (?:a |)(?:file |)(.+)',
-        ],
-        ToolType.CODE_RUN: [
-            r'run (?:the |)(?:code |)(.+)',
-            r'execute (?:code |)(.+)',
-            r'run python (.+)',
-            r'calculate (.+)',
-            r'compute (.+)',
-            r'eval(?:uate|)? (.+)',
-        ],
-        ToolType.WEB_FETCH: [
-            r'fetch (?:from |)(https?://.+)',
-            r'scrape (.+)',
-            r'get (?:content from |)(https?://.+)',
-            r'open (?:website |)(https?://.+)',
-        ],
-        ToolType.MEMORY: [
-            r'remember (?:that |)(.+)',
-            r'memorize (.+)',
-            r'don.?t forget (.+)',
-            r'save this (.+)',
-            r'recall (.+)',
-        ],
-        ToolType.CALCULATE: [
-            r'what.?s (\d+\s*[\+\-\*/]\s*\d+)',
-            r'calculate (\d+\s*[\+\-\*/]\s*\d+)',
-            r'compute (\d+\s*[\+\-\*/]\s*\d+)',
-            r'(\d+\s*[\+\-\*/]\s*\d+)',
-        ],
-    }
-    
-    # Keywords that indicate tool use
-    TOOL_KEYWORDS = {
-        ToolType.SEARCH: {'search', 'find', 'lookup', 'google', 'what is', 'who is', 'how to', 'information'},
-        ToolType.FILE_READ: {'read', 'show', 'open', 'display', 'view', 'list', 'contents'},
-        ToolType.FILE_WRITE: {'write', 'save', 'create', 'make', 'edit', 'modify'},
-        ToolType.CODE_RUN: {'run', 'execute', 'code', 'python', 'calculate', 'compute'},
-        ToolType.WEB_FETCH: {'fetch', 'scrape', 'get content', 'open website'},
-        ToolType.MEMORY: {'remember', 'memorize', 'save', 'recall', 'keep in mind'},
-        ToolType.CALCULATE: {'calculate', 'compute', 'sum', 'plus', 'minus', 'times', 'divided'},
-    }
+    Features:
+    - Tool definitions with parameters
+    - Structured argument parsing
+    - Function execution
+    - Result formatting
+    """
     
     def __init__(self):
-        self.call_count = 0
-        self.tool_history: List[ToolCall] = []
+        self.tools: Dict[str, ToolDefinition] = {}
+        self.call_history: List[ToolCall] = []
+        self._register_builtin_tools()
     
-    def should_use_tool(self, user_message: str) -> Optional[ToolCall]:
-        """Analyze if a tool should be used."""
-        self.call_count += 1
-        message_lower = user_message.lower()
+    def _register_builtin_tools(self):
+        """Register built-in tools."""
         
-        # Check regex patterns first (highest confidence)
-        for tool_type, patterns in self.TOOL_PATTERNS.items():
-            for pattern in patterns:
-                match = re.search(pattern, message_lower, re.IGNORECASE)
+        # Web Search Tool
+        self.register_tool(ToolDefinition(
+            name="web_search",
+            description="Search the web for information",
+            parameters=[
+                ToolParameter("query", "string", "The search query", required=True),
+                ToolParameter("max_results", "integer", "Maximum results to return", required=False, default=5)
+            ],
+            category="search"
+        ))
+        
+        # Web Fetch Tool
+        self.register_tool(ToolDefinition(
+            name="web_fetch",
+            description="Fetch and extract content from a URL",
+            parameters=[
+                ToolParameter("url", "string", "The URL to fetch", required=True),
+                ToolParameter("max_chars", "integer", "Maximum characters to extract", required=False, default=5000)
+            ],
+            category="web"
+        ))
+        
+        # Calculator Tool
+        self.register_tool(ToolDefinition(
+            name="calculate",
+            description="Perform mathematical calculations",
+            parameters=[
+                ToolParameter("expression", "string", "Mathematical expression to evaluate", required=True)
+            ],
+            category="utility"
+        ))
+        
+        # Memory Search Tool
+        self.register_tool(ToolDefinition(
+            name="memory_search",
+            description="Search the knowledge base for information",
+            parameters=[
+                ToolParameter("query", "string", "Search query", required=True),
+                ToolParameter("max_results", "integer", "Maximum results", required=False, default=5)
+            ],
+            category="memory"
+        ))
+        
+        # File Read Tool
+        self.register_tool(ToolDefinition(
+            name="file_read",
+            description="Read content from a file",
+            parameters=[
+                ToolParameter("path", "string", "File path to read", required=True),
+                ToolParameter("lines", "integer", "Number of lines to read", required=False)
+            ],
+            category="file"
+        ))
+        
+        # Code Run Tool
+        self.register_tool(ToolDefinition(
+            name="run_code",
+            description="Execute Python code",
+            parameters=[
+                ToolParameter("code", "string", "Python code to execute", required=True),
+                ToolParameter("timeout", "integer", "Timeout in seconds", required=False, default=30)
+            ],
+            category="code"
+        ))
+    
+    def register_tool(self, tool: ToolDefinition):
+        """Register a new tool."""
+        self.tools[tool.name] = tool
+    
+    def get_tool_schemas(self) -> List[Dict]:
+        """Get OpenAI-style tool schemas."""
+        schemas = []
+        for tool in self.tools.values():
+            params = {
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
+            for p in tool.parameters:
+                params["properties"][p.name] = {
+                    "type": p.type,
+                    "description": p.description
+                }
+                if p.enum:
+                    params["properties"][p.name]["enum"] = p.enum
+                if p.required:
+                    params["required"].append(p.name)
+            
+            schemas.append({
+                "type": "function",
+                "function": {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "parameters": params
+                }
+            })
+        return schemas
+    
+    def detect_tool_call(self, user_input: str) -> Optional[ToolCall]:
+        """Detect if user wants to use a tool."""
+        user_lower = user_input.lower()
+        
+        # Pattern-based detection
+        patterns = {
+            "web_search": [
+                r'search (?:for |)(.+)',
+                r'find (?:information about |)(.+)',
+                r'look up (.+)',
+                r'what is (.+)',
+                r'who is (.+)',
+                r'how to (.+)',
+                r'googling? (.+)',
+            ],
+            "calculate": [
+                r'calculate (.+)',
+                r'compute (.+)',
+                r'what is (\d+\s*[\+\-\*/]\s*\d+)',
+                r'(\d+\s*[\+\-\*/]\s*\d+\s*[\+\-\*/]\s*\d+)',
+            ],
+            "web_fetch": [
+                r'fetch (?:from |)(https?://.+)',
+                r'open (?:the |)(https?://.+)',
+                r'get (?:content from |)(https?://.+)',
+            ]
+        }
+        
+        for tool_name, regex_list in patterns.items():
+            for pattern in regex_list:
+                match = re.search(pattern, user_lower)
                 if match:
-                    try:
-                        param = match.group(1).strip() if match.groups() else user_message
-                    except:
-                        param = user_message
+                    args = {}
+                    if tool_name == "web_search":
+                        args["query"] = match.group(1).strip()
+                    elif tool_name == "calculate":
+                        args["expression"] = match.group(1).strip()
+                    elif tool_name == "web_fetch":
+                        args["url"] = match.group(1).strip()
                     
-                    tool_call = ToolCall(
-                        tool=tool_type,
+                    return ToolCall(
+                        tool_name=tool_name,
+                        arguments=args,
                         confidence=0.9,
-                        reason=f"Pattern match: {pattern}",
-                        parameters={'query': param, 'original': user_message}
+                        reasoning=f"Detected {tool_name} intent from pattern match"
                     )
-                    self.tool_history.append(tool_call)
-                    return tool_call
         
-        # Check keywords
-        for tool_type, keywords in self.TOOL_KEYWORDS.items():
-            matches = sum(1 for kw in keywords if kw in message_lower)
-            if matches >= 1:
-                # Extract potential parameter
-                param = self._extract_parameter(user_message, tool_type)
-                
-                tool_call = ToolCall(
-                    tool=tool_type,
-                    confidence=0.6 + (matches * 0.1),
-                    reason=f"Keyword match: {matches} keywords",
-                    parameters={'query': param, 'keywords': list(keywords & set(message_lower.split()))}
+        # Check for explicit tool mentions
+        for tool_name in self.tools:
+            if tool_name in user_lower:
+                return ToolCall(
+                    tool_name=tool_name,
+                    arguments={},
+                    confidence=0.7,
+                    reasoning=f"Explicit mention of {tool_name}"
                 )
-                self.tool_history.append(tool_call)
-                return tool_call
         
         return None
     
-    def _extract_parameter(self, message: str, tool_type: ToolType) -> str:
-        """Extract relevant parameter from message."""
-        # Remove common prefixes
-        prefixes = ['search for', 'find', 'look up', 'read', 'write to', 'calculate', 'compute']
-        msg_lower = message.lower()
+    def parse_function_call(self, response_text: str) -> Optional[ToolCall]:
+        """Parse function call from LLM response."""
+        # Look for JSON in response
+        json_patterns = [
+            r'```json\n({.*?})\n```',
+            r'\{[^{}]*"name"\s*:\s*"([^"]+)"[^{}]*"arguments"\s*:\s*(\{.*?\})',
+            r'"tool_calls"\s*:\s*\[(.*?)\]',
+        ]
         
-        for prefix in prefixes:
-            if msg_lower.startswith(prefix):
-                return message[len(prefix):].strip()
+        for pattern in json_patterns:
+            match = re.search(pattern, response_text, re.DOTALL)
+            if match:
+                try:
+                    if '"name"' in pattern:
+                        name = match.group(1)
+                        args = json.loads(match.group(2))
+                        return ToolCall(tool_name=name, arguments=args, confidence=0.95)
+                except:
+                    pass
         
-        return message
+        return None
+    
+    async def execute_tool(self, tool_call: ToolCall) -> Dict:
+        """Execute a tool call."""
+        tool = self.tools.get(tool_call.tool_name)
+        
+        if not tool:
+            return {"error": f"Tool '{tool_call.tool_name}' not found"}
+        
+        # Validate required parameters
+        missing = []
+        for p in tool.parameters:
+            if p.required and p.name not in tool_call.arguments:
+                missing.append(p.name)
+        
+        if missing:
+            return {"error": f"Missing required parameters: {missing}"}
+        
+        # Apply defaults
+        for p in tool.parameters:
+            if p.name not in tool_call.arguments and p.default is not None:
+                tool_call.arguments[p.name] = p.default
+        
+        # Execute function if provided
+        try:
+            if tool.function:
+                result = tool.function(**tool_call.arguments)
+                tool_call.result = result
+            else:
+                # Return mock result for registered tools
+                tool_call.result = f"[Mock] Would execute {tool.name} with {tool_call.arguments}"
+            
+            self.call_history.append(tool_call)
+            
+            return {
+                "status": "ok",
+                "tool": tool_call.tool_name,
+                "result": tool_call.result,
+                "reasoning": tool_call.reasoning
+            }
+            
+        except Exception as e:
+            tool_call.error = str(e)
+            return {"error": str(e)}
+    
+    def get_call_history(self) -> List[Dict]:
+        """Get tool call history."""
+        return [
+            {
+                "tool": call.tool_name,
+                "arguments": call.arguments,
+                "result": str(call.result)[:100] if call.result else None,
+                "error": call.error,
+                "executed_at": call.executed_at
+            }
+            for call in self.call_history
+        ]
     
     def get_stats(self) -> Dict:
-        """Get tool calling statistics."""
+        """Get tool usage statistics."""
         tool_counts = {}
-        for tc in self.tool_history:
-            tool_name = tc.tool.value
-            tool_counts[tool_name] = tool_counts.get(tool_name, 0) + 1
+        for call in self.call_history:
+            tool_counts[call.tool_name] = tool_counts.get(call.tool_name, 0) + 1
         
         return {
-            'total_calls': self.call_count,
-            'tool_history_count': len(self.tool_history),
-            'tool_usage': tool_counts,
-            'recent_tools': [tc.tool.value for tc in self.tool_history[-5:]]
+            "total_calls": len(self.call_history),
+            "tool_counts": tool_counts,
+            "available_tools": list(self.tools.keys())
         }
 
 
 # Singleton
 _tool_calling_engine = None
 
-def get_tool_calling_engine() -> ToolCallingEngine:
+def get_tool_calling_engine() -> OpenAIToolCallingEngine:
     global _tool_calling_engine
     if _tool_calling_engine is None:
-        _tool_calling_engine = ToolCallingEngine()
+        _tool_calling_engine = OpenAIToolCallingEngine()
     return _tool_calling_engine
-
-
-# Convenience functions
-def should_use_tool(message: str) -> Optional[ToolCall]:
-    """Check if tool should be used."""
-    return get_tool_calling_engine().should_use_tool(message)
-
-
-def get_tool_stats() -> Dict:
-    """Get tool calling stats."""
-    return get_tool_calling_engine().get_stats()

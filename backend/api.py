@@ -380,9 +380,9 @@ async def get_sentiment_tone(text: str):
 # Tool Calling
 TOOL_CALLING_AVAILABLE = False
 try:
-    from tool_calling_engine import ToolCallingEngine, should_use_tool, get_tool_stats
+    from tool_calling_engine import OpenAIToolCallingEngine, ToolCall, get_tool_calling_engine
     TOOL_CALLING_AVAILABLE = True
-    print("[TOOL-CALLING] Tool Calling Engine loaded")
+    print("[TOOL-CALLING] OpenAI-style Tool Calling Engine loaded")
 except ImportError as e:
     print(f"[TOOL-CALLING] Warning: {e}")
 
@@ -844,6 +844,109 @@ async def get_thinking_summary():
     
     summary = thinking_engine.get_session_summary()
     return {"status": "ok", "summary": summary}
+
+# Enhanced Tool Calling Engine
+TOOL_CALLING_AVAILABLE = False
+try:
+    from tool_calling_engine import OpenAIToolCallingEngine, get_tool_calling_engine
+    TOOL_CALLING_AVAILABLE = True
+    print("[TOOL-CALLING] OpenAI-style Tool Calling Engine loaded")
+except ImportError as e:
+    print(f"[TOOL-CALLING] Warning: {e}")
+
+tool_calling_engine = None
+
+@app.get("/api/tools/schemas")
+async def get_tool_schemas():
+    """Get OpenAI-style tool schemas."""
+    global tool_calling_engine
+    if not TOOL_CALLING_AVAILABLE:
+        return {"error": "Tool calling not available"}
+    
+    if tool_calling_engine is None:
+        tool_calling_engine = get_tool_calling_engine()
+    
+    schemas = tool_calling_engine.get_tool_schemas()
+    return {"status": "ok", "schemas": schemas}
+
+@app.post("/api/tools/auto-detect")
+async def detect_tool(request: Request):
+    """Detect if user wants to call a tool."""
+    global tool_calling_engine
+    if not TOOL_CALLING_AVAILABLE:
+        return {"error": "Tool calling not available"}
+    
+    if tool_calling_engine is None:
+        tool_calling_engine = get_tool_calling_engine()
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    user_input = body.get("user_input", "")
+    
+    tool_call = tool_calling_engine.detect_tool_call(user_input)
+    
+    if tool_call:
+        return {
+            "status": "ok",
+            "detected": True,
+            "tool": tool_call.tool_name,
+            "arguments": tool_call.arguments,
+            "confidence": tool_call.confidence,
+            "reasoning": tool_call.reasoning
+        }
+    else:
+        return {"status": "ok", "detected": False}
+
+@app.post("/api/tools/execute")
+async def execute_tool(request: Request):
+    """Execute a tool call."""
+    global tool_calling_engine
+    if not TOOL_CALLING_AVAILABLE:
+        return {"error": "Tool calling not available"}
+    
+    if tool_calling_engine is None:
+        tool_calling_engine = get_tool_calling_engine()
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    tool_name = body.get("tool_name", "")
+    arguments = body.get("arguments", {})
+    
+    tool_call = ToolCall(
+        tool_name=tool_name,
+        arguments=arguments,
+        confidence=1.0,
+        reasoning="Direct execution request"
+    )
+    
+    result = await tool_calling_engine.execute_tool(tool_call)
+    return result
+
+@app.get("/api/tools/history")
+async def get_tool_history():
+    """Get tool call history."""
+    global tool_calling_engine
+    if not TOOL_CALLING_AVAILABLE or tool_calling_engine is None:
+        return {"error": "Tool calling not available"}
+    
+    history = tool_calling_engine.get_call_history()
+    return {"status": "ok", "history": history}
+
+@app.get("/api/tools/stats")
+async def get_tool_stats():
+    """Get tool usage statistics."""
+    global tool_calling_engine
+    if not TOOL_CALLING_AVAILABLE or tool_calling_engine is None:
+        return {"error": "Tool calling not available"}
+    
+    stats = tool_calling_engine.get_stats()
+    return {"status": "ok", "stats": stats}
 
 # Structured Response Formatter
 STRUCTURED_AVAILABLE = False
