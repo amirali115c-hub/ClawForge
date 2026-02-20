@@ -189,41 +189,46 @@ function App() {
         endpoint = '/api/chat/qwen';
       }
       
+      // Create abort controller for timeout (2 minutes)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000);
+      
       const res = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMessage }),
-        cache: 'no-cache'
+        cache: 'no-cache',
+        signal: controller.signal
       });
-
+      
+      clearTimeout(timeoutId);
       const data = await res.json();
       
       if (data.status === 'success') {
-        // Ensure response is a string (convert if needed)
         let responseText = typeof data.response === 'string' ? data.response : JSON.stringify(data.response);
         let modelNote = '';
         
-        // For smart router, show which model was used
         if (useSmartRouter && data.model_used) {
           const modelName = data.model_used.replace('ollama/', '');
           modelNote = `\n\n🤖 *Auto-selected model: ${modelName}*`;
         }
         
         setChatMessages(prev => [...prev, { role: 'assistant', content: responseText + modelNote }]);
-        
-        // Auto-learn from this interaction (NEURON v2.0)
         triggerAutoLearn(userMessage);
       } else {
-        // Ensure message is a string
         let errorMsg = typeof data.message === 'string' ? data.message : JSON.stringify(data.message || data.error || 'Unknown error');
         setChatMessages(prev => [...prev, { role: 'assistant', content: 'Error: ' + errorMsg }]);
       }
     } catch (e) {
-      handleDisconnect();
-      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Connection lost. Attempting to reconnect...' }]);
+      if (e.name === 'AbortError') {
+        setChatMessages(prev => [...prev, { role: 'assistant', content: '⏳ This is taking longer than expected. Please wait...' }]);
+      } else {
+        handleDisconnect();
+        setChatMessages(prev => [...prev, { role: 'assistant', content: 'Connection lost. Attempting to reconnect...' }]);
+      }
+    } finally {
+      setChatLoading(false);
     }
-    
-    setChatLoading(false);
   };
 
   // Auto-learning trigger - learns silently from every conversation
