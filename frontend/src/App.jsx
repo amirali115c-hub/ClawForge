@@ -62,10 +62,32 @@ function App() {
     return () => stopHeartbeat();
   }, []);
 
-  // Scroll to bottom
+  // Scroll to bottom - advanced
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages]);
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: 'auto',
+        block: 'end'
+      });
+      // Also try native scroll
+      const container = document.querySelector('.messages-container');
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+  }, [chatMessages, chatLoading]);
+
+  // Manual scroll handler
+  const handleScroll = () => {
+    const container = document.querySelector('.messages-container');
+    if (container) {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      // Auto-scroll if user is near bottom
+      if (scrollHeight - scrollTop - clientHeight < 100) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+  };
 
   // Heartbeat
   const startHeartbeat = () => {
@@ -316,7 +338,7 @@ function App() {
         <p>Powered by {selectedModel.split('/')[1] || selectedModel} • Self-learning via NEURON v2.0</p>
       </div>
       
-      <div className="chat-messages">
+      <div className="chat-messages" onScroll={handleScroll}>
         {chatMessages.map((msg, i) => (
           <div key={i} className={`chat-message ${msg.role}`}>
             <div className="message-role">{msg.role === 'system' ? 'Leo 2.0' : msg.role}</div>
