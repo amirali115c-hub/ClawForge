@@ -1,4 +1,4 @@
-// Leo 2.0 - Full-Screen React Dashboard with Markdown Support
+// Leo 2.0 - Full-Screen React Dashboard with NEURON Self-Learning
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
@@ -9,23 +9,16 @@ function parseMarkdown(text) {
   if (!text) return '';
   
   let html = text
-    // Code blocks
     .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
     .replace(/`([^`]+)`/g, '<code>$1</code>')
-    // Bold
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    // Italic
     .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-    // Headers
     .replace(/^### (.+)$/gm, '<h3>$1</h3>')
     .replace(/^## (.+)$/gm, '<h2>$1</h2>')
     .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-    // Lists
     .replace(/^\- (.+)$/gm, '<li>$1</li>')
     .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
-    // Links
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
-    // Line breaks
     .replace(/\n/g, '<br>');
   
   return html;
@@ -34,9 +27,8 @@ function parseMarkdown(text) {
 function App() {
   const [activeTab, setActiveTab] = useState('chat');
   const [security, setSecurity] = useState({ mode: 'LOCKED', riskScore: 0 });
-  const [loading, setLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState([
-    { role: 'system', content: "Hello! I'm Leo 2.0, an advanced AI assistant.\n\nWhat I Can Do:\n- Deep Understanding - complex questions, context retention\n- Reasoning & Analysis - step-by-step problem solving\n- Web Search - Get current information\n- Memory - Remember important things\n- Code - Write and run Python\n- Files - Read and edit files\n- Planning - Create multi-step plans\n\nJust tell me what you need - I'll understand and help!" }
+    { role: 'system', content: "Hello! I'm Leo 2.0, a self-learning AI agent powered by NEURON v2.0.\n\nI learn from every conversation - extracting concepts, building knowledge, and growing smarter over time.\n\nWhat I Can Do:\n- 🧠 Self-Learning - I learn from our conversations\n- 💬 Deep Understanding - complex questions, context retention\n- 🔗 Knowledge Building - I remember what we discuss\n- 📊 Reasoning - step-by-step problem solving\n- 🌐 Web Search - Get current information\n- 💾 Memory - Remember important things\n- 💻 Code - Write and run Python\n- 📁 Files - Read and edit files\n- 🎯 Planning - Create multi-step plans\n\nJust tell me what you need - I'll understand and help!" }
   ]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
@@ -68,9 +60,8 @@ function App() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
-  // Heartbeat to keep connection alive
+  // Heartbeat
   const startHeartbeat = () => {
-    // Heartbeat every 30 seconds to keep connection alive
     heartbeatRef.current = setInterval(async () => {
       try {
         await fetch(`${API_BASE}/api/health`, { 
@@ -105,7 +96,7 @@ function App() {
 
   const attemptReconnect = async () => {
     try {
-      await fetch(`${API_BASE}/api/health`, { 
+      await fetch(`${API_BASE}/api/health', { 
         method: 'GET',
         cache: 'no-cache'
       });
@@ -140,10 +131,11 @@ function App() {
         setMemoryStats(data);
       }
     } catch (e) {
-      console.log('Long-term memory not available');
+      console.log('Memory stats not available');
     }
   };
 
+  // Send message with auto-learning
   const sendChatMessage = async () => {
     if (!chatInput.trim() || chatLoading) return;
     if (!isConnected) {
@@ -173,6 +165,9 @@ function App() {
       
       if (data.status === 'success') {
         setChatMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+        
+        // Auto-learn from this interaction (NEURON v2.0)
+        triggerAutoLearn(userMessage);
       } else {
         setChatMessages(prev => [...prev, { role: 'assistant', content: data.message || 'Error: ' + data.error }]);
       }
@@ -182,6 +177,23 @@ function App() {
     }
     
     setChatLoading(false);
+  };
+
+  // Auto-learning trigger - learns silently from every conversation
+  const triggerAutoLearn = async (userInput) => {
+    try {
+      await fetch(`${API_BASE}/api/neuron/learn`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          user_input: userInput,
+          strategy: 'Synthesis'
+        }),
+      });
+      // Learning happens silently in background
+    } catch (e) {
+      // Silent fail - learning is optional
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -194,8 +206,6 @@ function App() {
   const tabs = [
     { id: 'chat', label: '💬', title: 'Chat' },
     { id: 'dashboard', label: '📊', title: 'Dashboard' },
-    { id: 'learning', label: '🧠', title: 'NEURON Learning' },
-    { id: 'prompt', label: '⚡', title: 'Prompt Engine' },
     { id: 'memory', label: '💾', title: 'Memory' },
     { id: 'tasks', label: '📋', title: 'Tasks' },
     { id: 'security', label: '🛡️', title: 'Security' },
@@ -211,7 +221,7 @@ function App() {
       )}
       <div className="chat-header">
         <h2>Chat with Leo 2.0</h2>
-        <p>Powered by {selectedModel.split('/')[1] || selectedModel} via NVIDIA API</p>
+        <p>Powered by {selectedModel.split('/')[1] || selectedModel} • Self-learning via NEURON v2.0</p>
       </div>
       
       <div className="chat-messages">
@@ -261,7 +271,7 @@ function App() {
     <div className="dashboard-view">
       <div className="dashboard-header">
         <h2>Dashboard</h2>
-        <p>Your Leo 2.0 overview</p>
+        <p>Your Leo 2.0 overview • Powered by NEURON v2.0</p>
       </div>
       <div className="dashboard-grid">
         <div className="dashboard-card">
@@ -308,122 +318,10 @@ function App() {
     </div>
   );
 
-  const renderLearning = () => {
-    const [learningInput, setLearningInput] = useState('');
-    const [learningStrategy, setLearningStrategy] = useState('CoT');
-    const [learningResult, setLearningResult] = useState(null);
-    const [loading, setLoading] = useState(false);
-
-    const strategies = [
-      { id: 'CoT', label: 'Chain-of-Thought' },
-      { id: 'ToT', label: 'Tree of Thought' },
-      { id: 'Synthesis', label: 'Synthesis' },
-      { id: 'Socratic', label: 'Socratic' },
-      { id: 'Analysis', label: 'Analysis' },
-    ];
-
-    const handleLearn = async () => {
-      if (!learningInput.trim() || loading) return;
-      setLoading(true);
-      setLearningResult(null);
-
-      try {
-        const res = await fetch(`${API_BASE}/api/neuron/learn`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            user_input: learningInput,
-            strategy: learningStrategy 
-          }),
-        });
-        const data = await res.json();
-        setLearningResult(data);
-      } catch (e) {
-        setLearningResult({ status: 'error', message: e.message });
-      }
-      setLoading(false);
-    };
-
-    return (
-      <div className="learning-view">
-        <div className="learning-header">
-          <h2>🧠 NEURON Learning</h2>
-          <p>Self-learning AI agent with concept extraction</p>
-        </div>
-        
-        <div className="learning-content">
-          <div className="learning-input-section">
-            <div className="input-group">
-              <select 
-                value={learningStrategy}
-                onChange={(e) => setLearningStrategy(e.target.value)}
-                className="strategy-select"
-              >
-                {strategies.map(s => (
-                  <option key={s.id} value={s.id}>{s.label}</option>
-                ))}
-              </select>
-            </div>
-            
-            <textarea
-              value={learningInput}
-              onChange={(e) => setLearningInput(e.target.value)}
-              placeholder="Ask or teach NEURON something..."
-              className="learning-input"
-              rows={4}
-            />
-            
-            <button 
-              onClick={handleLearn}
-              disabled={loading || !learningInput.trim()}
-              className="learn-btn"
-            >
-              {loading ? 'Learning...' : 'Learn'}
-            </button>
-          </div>
-
-          {learningResult && (
-            <div className="learning-result">
-              <h3>Learning Result</h3>
-              {learningResult.status === 'error' ? (
-                <p className="error">{learningResult.message}</p>
-              ) : (
-                <div className="result-content">
-                  <div className="response">
-                    <h4>Response</h4>
-                    <p>{learningResult.response}</p>
-                  </div>
-                  {learningResult.learned && (
-                    <div className="learned-info">
-                      <h4>Extracted Knowledge</h4>
-                      <p><strong>Domain:</strong> {learningResult.learned.domain}</p>
-                      <p><strong>Key Insight:</strong> {learningResult.learned.keyInsight}</p>
-                      {learningResult.learned.concepts?.length > 0 && (
-                        <div className="concepts">
-                          <p><strong>Concepts:</strong></p>
-                          <div className="concept-tags">
-                            {learningResult.learned.concepts.map((c, i) => (
-                              <span key={i} className="concept-tag">{c}</span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   const renderContent = () => {
     switch(activeTab) {
       case 'chat': return renderChat();
       case 'dashboard': return renderDashboard();
-      case 'learning': return renderLearning();
       default: return (
         <div className="dashboard-view">
           <div className="dashboard-header">
