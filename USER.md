@@ -105,9 +105,27 @@ Amir is the creator of Leo 2.0 (formerly ClawForge v4.0). He provided the instru
 
 ### Leo 2.0 AI Agent
 - **Creator:** Amir Ali
-- **Status:** Active development (Phase 2)
-- **Purpose:** Production-grade autonomous AI agent
+- **Status:** Active development
+- **Version:** 2.0
+- **Type:** Self-Learning AI Agent
+- **Powered by:** NEURON v2.0
+- **LLM:** qwen2.5:3b (Ollama)
+- **Purpose:** Production-grade autonomous AI agent with self-learning
 - **Location:** C:\AI-Secure-Workspace\ClawForge
+
+---
+
+## NEURON v2.0 Integration
+
+As of Fri 2026-02-20, Leo 2.0 now has NEURON v2.0 integrated:
+
+- 🧠 **Self-Learning** - Extracts concepts from every interaction
+- 💡 **Curiosity Questions** - Auto-generates questions
+- 🔗 **Cross-Domain Synthesis** - Connects knowledge across 9 domains
+- 📊 **Hypothesis Generation** - Creates testable ideas
+- 🎯 **5 Learning Strategies** - CoT, ToT, Synthesis, Socratic, Analysis
+
+**GitHub:** https://github.com/amirali115c-hub/ClawForge
 
 ---
 
@@ -134,8 +152,9 @@ Amir is the creator of Leo 2.0 (formerly ClawForge v4.0). He provided the instru
 
 ## Last Updated
 
-**Date:** Fri 2026-02-20 05:00 GMT+5
+**Date:** Fri 2026-02-20 13:07 GMT+5
 **Updated By:** Leo 2.0 Agent
+**Changes:** Added NEURON v2.0 integration info, updated Leo 2.0 identity
 
 ---
 
