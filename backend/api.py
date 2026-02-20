@@ -1416,6 +1416,379 @@ async def smart_status():
     return smart_router.get_status()
 
 # ============================================================================
+# PRIVACY VECTOR MEMORY (Privacy-First with Permissions)
+# ============================================================================
+
+try:
+    from vector_memory import PrivacyVectorMemory, create_vector_memory
+    vector_memory = create_vector_memory()
+    VECTOR_MEMORY_AVAILABLE = True
+    print("[VECTOR-MEMORY] Privacy-First Vector Memory loaded")
+except ImportError as e:
+    print(f"[VECTOR-MEMORY] Warning: Vector Memory not available: {e}")
+    VECTOR_MEMORY_AVAILABLE = False
+
+class MemoryRequest(BaseModel):
+    content: str
+    category: str
+    tags: List[str] = []
+    importance: float = 0.5
+    source: str = "learned"
+    is_personal: bool = False
+
+class FeedbackRequest(BaseModel):
+    feedback_type: str  # positive, negative, correction
+    original_content: str
+    corrected_content: str = None
+    context: str = None
+
+@app.post("/api/memory/store")
+async def store_memory(request: MemoryRequest):
+    """
+    Store a memory in vector memory.
+    Returns permission request ID if approval needed.
+    """
+    if not VECTOR_MEMORY_AVAILABLE:
+        return {"status": "error", "message": "Vector Memory not available"}
+    
+    success, request_id = vector_memory.store_memory(
+        content=request.content,
+        category=request.category,
+        tags=request.tags,
+        importance=request.importance,
+        source=request.source,
+        is_personal=request.is_personal
+    )
+    
+    if success:
+        return {
+            "status": "success",
+            "message": "Memory stored successfully",
+            "memory_id": request.content[:20] + "..."
+        }
+    else:
+        return {
+            "status": "pending_permission",
+            "message": "Permission required to store this memory",
+            "request_id": request_id
+        }
+
+@app.get("/api/memory/search")
+async def search_memories(query: str, category: str = None, limit: int = 10):
+    """
+    Search memories using semantic keywords.
+    Privacy-safe: uses keyword matching, not embeddings.
+    """
+    if not VECTOR_MEMORY_AVAILABLE:
+        return {"status": "error", "message": "Vector Memory not available"}
+    
+    results = vector_memory.search_memories(
+        query=query,
+        category=category,
+        limit=limit
+    )
+    
+    return {
+        "status": "success",
+        "query": query,
+        "results": results,
+        "total": len(results)
+    }
+
+@app.post("/api/memory/feedback")
+async def learn_from_feedback(request: FeedbackRequest):
+    """
+    Learn from user feedback (positive, negative, correction).
+    """
+    if not VECTOR_MEMORY_AVAILABLE:
+        return {"status": "error", "message": "Vector Memory not available"}
+    
+    success, request_id = vector_memory.learn_from_feedback(
+        feedback_type=request.feedback_type,
+        original_content=request.original_content,
+        corrected_content=request.corrected_content,
+        context=request.context
+    )
+    
+    if success:
+        return {
+            "status": "success",
+            "message": f"Learned from {request.feedback_type} feedback"
+        }
+    else:
+        return {
+            "status": "pending_permission",
+            "message": "Permission required",
+            "request_id": request_id
+        }
+
+@app.get("/api/memory/improvements")
+async def get_improvements():
+    """Get all improvements from corrections."""
+    if not VECTOR_MEMORY_AVAILABLE:
+        return {"status": "error", "message": "Vector Memory not available"}
+    
+    improvements = vector_memory.get_improvements()
+    return {
+        "status": "success",
+        "improvements": improvements,
+        "total": len(improvements)
+    }
+
+@app.get("/api/memory/permissions/pending")
+async def get_pending_permissions():
+    """Get all pending permission requests."""
+    if not VECTOR_MEMORY_AVAILABLE:
+        return {"status": "error", "message": "Vector Memory not available"}
+    
+    requests = vector_memory.permission_manager.get_pending_requests()
+    return {
+        "status": "success",
+        "pending_requests": requests,
+        "total": len(requests)
+    }
+
+@app.post("/api/memory/permissions/{request_id}/grant")
+async def grant_permission(request_id: str):
+    """Grant a permission request."""
+    if not VECTOR_MEMORY_AVAILABLE:
+        return {"status": "error", "message": "Vector Memory not available"}
+    
+    success = vector_memory.permission_manager.grant_permission(request_id)
+    
+    if success:
+        return {
+            "status": "success",
+            "message": "Permission granted"
+        }
+    else:
+        return {
+            "status": "error",
+            "message": "Request not found or already processed"
+        }
+
+@app.post("/api/memory/permissions/{request_id}/deny")
+async def deny_permission(request_id: str):
+    """Deny a permission request."""
+    if not VECTOR_MEMORY_AVAILABLE:
+        return {"status": "error", "message": "Vector Memory not available"}
+    
+    success = vector_memory.permission_manager.deny_permission(request_id)
+    
+    if success:
+        return {
+            "status": "success",
+            "message": "Permission denied"
+        }
+    else:
+        return {
+            "status": "error",
+            "message": "Request not found or already processed"
+        }
+
+@app.get("/api/memory/export")
+async def export_all_data():
+    """
+    Export all memory data (user right).
+    Returns download link for all stored data.
+    """
+    if not VECTOR_MEMORY_AVAILABLE:
+        return {"status": "error", "message": "Vector Memory not available"}
+    
+    data = vector_memory.export_data()
+    return {
+        "status": "success",
+        "export": data,
+        "download_ready": True
+    }
+
+@app.post("/api/memory/delete/request")
+async def request_delete_all():
+    """
+    Request to delete all data.
+    Requires explicit permission.
+    """
+    if not VECTOR_MEMORY_AVAILABLE:
+        return {"status": "error", "message": "Vector Memory not available"}
+    
+    success, request_id = vector_memory.delete_all_data()
+    
+    if success:
+        return {
+            "status": "success",
+            "message": "All data deleted"
+        }
+    else:
+        return {
+            "status": "pending_permission",
+            "message": "Permission required to delete all data",
+            "request_id": request_id,
+            "warning": "This action is irreversible"
+        }
+
+@app.post("/api/memory/delete/confirm")
+async def confirm_delete_all():
+    """Confirm and execute deletion of all data (after permission)."""
+    if not VECTOR_MEMORY_AVAILABLE:
+        return {"status": "error", "message": "Vector Memory not available"}
+    
+    success = vector_memory.confirm_delete_all()
+    
+    if success:
+        return {
+            "status": "success",
+            "message": "All data has been deleted"
+        }
+    else:
+        return {
+            "status": "error",
+            "message": "Permission not granted or already processed"
+        }
+
+@app.get("/api/memory/stats")
+async def memory_stats():
+    """Get vector memory statistics."""
+    if not VECTOR_MEMORY_AVAILABLE:
+        return {"status": "error", "message": "Vector Memory not available"}
+    
+    stats = vector_memory.get_stats()
+    return {
+        "status": "success",
+        "statistics": stats
+    }
+
+@app.post("/api/memory/{memory_id}/delete")
+async def delete_specific_memory(memory_id: str):
+    """Delete a specific memory."""
+    if not VECTOR_MEMORY_AVAILABLE:
+        return {"status": "error", "message": "Vector Memory not available"}
+    
+    success = vector_memory.delete_memory(memory_id)
+    
+    if success:
+        return {
+            "status": "success",
+            "message": "Memory deleted"
+        }
+    else:
+        return {
+            "status": "error",
+            "message": "Memory not found or requires permission"
+        }
+
+# ============================================================================
+# CUSTODIAN MODE (Privacy & Security)
+# ============================================================================
+
+try:
+    from custodian import CustodianEngine, RequestType, ThreatLevel
+    custodian = CustodianEngine()
+    CUSTODIAN_AVAILABLE = True
+    print("[CUSTODIAN] Privacy & Security Custodian loaded")
+except ImportError as e:
+    print(f"[CUSTODIAN] Warning: Custodian not available: {e}")
+    CUSTODIAN_AVAILABLE = False
+
+class PersonalDataRequest(BaseModel):
+    text: str
+    action: str = "detect"
+
+@app.post("/api/custodian/check")
+async def check_personal_data(request: PersonalDataRequest):
+    if not CUSTODIAN_AVAILABLE:
+        return {"status": "error", "message": "Custodian not available"}
+    
+    detected = custodian.detect_personal_data(request.text)
+    return {
+        "status": "success",
+        "detected": detected,
+        "count": len(detected)
+    }
+
+@app.post("/api/custodian/block")
+async def block_personal_data(request: PersonalDataRequest):
+    if not CUSTODIAN_AVAILABLE:
+        return {"status": "error", "message": "Custodian not available"}
+    
+    sanitized, detected = custodian.block_personal_data(request.text)
+    custodian.log_personal_data_detection(detected, context="api")
+    
+    return {
+        "status": "success",
+        "sanitized_text": sanitized,
+        "blocked_count": len(detected)
+    }
+
+@app.get("/api/custodian/permissions/pending")
+async def get_custodian_permissions():
+    if not CUSTODIAN_AVAILABLE:
+        return {"status": "error", "message": "Custodian not available"}
+    
+    requests = custodian.get_pending_permissions()
+    return {"status": "success", "pending": requests, "total": len(requests)}
+
+@app.post("/api/custodian/permissions/{request_id}/approve")
+async def approve_custodian_permission(request_id: str):
+    if not CUSTODIAN_AVAILABLE:
+        return {"status": "error", "message": "Custodian not available"}
+    
+    success = custodian.grant_permission(request_id)
+    return {"status": "success" if success else "error", "message": "Granted" if success else "Not found"}
+
+@app.post("/api/custodian/permissions/{request_id}/deny")
+async def deny_custodian_permission(request_id: str):
+    if not CUSTODIAN_AVAILABLE:
+        return {"status": "error", "message": "Custodian not available"}
+    
+    success = custodian.deny_permission(request_id)
+    return {"status": "success" if success else "error", "message": "Denied" if success else "Not found"}
+
+@app.get("/api/custodian/audit")
+async def get_audit_log(limit: int = 100, threat_level: str = None):
+    if not CUSTODIAN_AVAILABLE:
+        return {"status": "error", "message": "Custodian not available"}
+    
+    events = custodian.get_audit_log(limit=limit, threat_level=threat_level)
+    return {"status": "success", "events": events, "total": len(events)}
+
+@app.get("/api/custodian/stats")
+async def custodian_stats():
+    if not CUSTODIAN_AVAILABLE:
+        return {"status": "error", "message": "Custodian not available"}
+    
+    return {"status": "success", "statistics": custodian.get_stats()}
+
+@app.get("/api/custodian/status")
+async def custodian_status():
+    if not CUSTODIAN_AVAILABLE:
+        return {"status": "error", "message": "Custodian not available"}
+    
+    return {"status": "success", "custodian": custodian.get_status()}
+
+@app.post("/api/custodian/external/block")
+async def block_external_requests():
+    if not CUSTODIAN_AVAILABLE:
+        return {"status": "error", "message": "Custodian not available"}
+    
+    custodian.block_external = True
+    return {"status": "success", "message": "External requests blocked", "blocked": True}
+
+@app.post("/api/custodian/external/unblock")
+async def unblock_external_requests():
+    if not CUSTODIAN_AVAILABLE:
+        return {"status": "error", "message": "Custodian not available"}
+    
+    custodian.block_external = False
+    return {"status": "success", "message": "External requests allowed", "blocked": False}
+
+@app.get("/api/custodian/export")
+async def export_custodian_data():
+    if not CUSTODIAN_AVAILABLE:
+        return {"status": "error", "message": "Custodian not available"}
+    
+    return {"status": "success", "export": custodian.export_all_data()}
+
+# ============================================================================
 # MAIN ENTRY POINT
 # ============================================================================
 
