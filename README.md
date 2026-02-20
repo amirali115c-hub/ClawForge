@@ -1,16 +1,16 @@
-# ClawForge v4.0 - Production-Grade Autonomous AI Agent Framework
+# Leo 2.0 - Production-Grade Autonomous AI Agent Framework
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.0.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-2.0.0-blue" alt="Version">
   <img src="https://img.shields.io/badge/Python-3.8+-green" alt="Python">
   <img src="https://img.shields.io/badge/license-MIT-yellow" alt="License">
 </p>
 
 A production-grade autonomous AI agent framework for building, deploying, and managing AI-powered automation systems.
 
-## 🎯 What is ClawForge?
+## 🎯 What is Leo 2.0?
 
-ClawForge is NOT a chatbot. It's a full-stack AI operator that can:
+Leo 2.0 is NOT a chatbot. It's a full-stack AI operator that can:
 
 - 📝 **Write Content** - Blog posts, articles, social media
 - 💻 **Build Software** - Code generation, debugging, full-stack apps
@@ -105,7 +105,7 @@ See [backend/API_CONFIGURATION.md](backend/API_CONFIGURATION.md) for detailed se
 ## 📁 Project Structure
 
 ```
-ClawForge/
+Leo 2.0/
 ├── backend/
 │   ├── api.py              # FastAPI server
 │   ├── config.py           # Configuration management
@@ -189,9 +189,9 @@ GLM_API_KEY=
 SILICON_API_KEY=
 
 # Server
-CLAWFORGE_HOST=127.0.0.1
-CLAWFORGE_PORT=8000
-CLAWFORGE_FRONTEND_PORT=7860
+LEO_HOST=127.0.0.1
+LEO_PORT=8000
+LEO_FRONTEND_PORT=7860
 ```
 
 ### Security Modes
@@ -220,3 +220,4 @@ MIT License - See LICENSE file for details.
 ---
 
 **Built with ❤️ for autonomous AI agents**
+**Created by Amir Ali (Project Shahzada)**

@@ -1,7 +1,7 @@
 {
-  "name": "clawforge-dashboard",
-  "version": "4.0.0",
-  "description": "ClawForge AI Agent Dashboard",
+  "name": "leo2-dashboard",
+  "version": "2.0.0",
+  "description": "Leo 2.0 - Self-Learning AI Agent Dashboard",
   "type": "module",
   "scripts": {
     "dev": "vite",

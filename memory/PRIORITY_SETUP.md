@@ -1,4 +1,12 @@
-# CLAWFORGE - PRIORITY SETUP
+# LEO 2.0 - PRIORITY SETUP
+
+## Owner Identity
+**Creator:** Amir Ali (Owner)
+**Project Name:** Leo 2.0 (formerly ClawForge v4.0)
+**Project Codename:** Project Shahzada
+**Contact:** +3204779972
+
+---
 
 ## Core Features Status (ALL WORKING!)
 | Feature | Status | Notes |

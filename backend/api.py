@@ -1,5 +1,5 @@
-# Advanced System Prompt for ClawForge
-ADVANCED_SYSTEM_PROMPT = """You are ClawForge, an advanced AI assistant with deep understanding capabilities.
+# Advanced System Prompt for Leo 2.0
+ADVANCED_SYSTEM_PROMPT = """You are Leo 2.0, an advanced self-learning AI agent with deep understanding capabilities.
 
 ## Your Core Capabilities
 
@@ -1241,6 +1241,18 @@ except ImportError as e:
     print(f"[MEMORY] Warning: Memory System not available: {e}")
 
 # ============================================================================
+# NEURON v2.0 SELF-LEARNING ENDPOINTS
+# ============================================================================
+
+# Import NEURON integration
+try:
+    from neuron_integration import neuron_router
+    app.include_router(neuron_router)
+    print("[NEURON] NEURON v2.0 integration loaded successfully")
+except ImportError as e:
+    print(f"[NEURON] NEURON integration not available: {e}")
+
+# ============================================================================
 # MAIN ENTRY POINT
 # ============================================================================
 
@@ -1248,11 +1260,12 @@ if __name__ == "__main__":
     import uvicorn
     
     print("\n" + "="*60)
-    print("CLAWFORGE v4.0 - FastAPI Backend")
+    print("LEO 2.0 - Self-Learning AI Agent")
     print("="*60)
     print("\nStarting server...")
     print("Dashboard will be available at: http://127.0.0.1:7860")
     print("API Documentation: http://127.0.0.1:7860/docs")
+    print("NEURON Learning: http://127.0.0.1:7860/api/neuron/*")
     print("="*60 + "\n")
     
     uvicorn.run(
