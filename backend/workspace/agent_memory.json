@@ -1,0 +1,28 @@
+{
+  "semantic": {
+    "facts": [],
+    "preferences": [],
+    "profile": {
+      "name": null,
+      "location": null,
+      "occupation": null,
+      "goals": null
+    }
+  },
+  "episodic": {
+    "sessions": [],
+    "compressed": null
+  },
+  "tasks": {
+    "open": [],
+    "completed": [],
+    "blocked": []
+  },
+  "meta": {
+    "session_count": 0,
+    "total_messages": 0,
+    "created_at": "2026-02-20T17:27:38.878839",
+    "last_seen": null,
+    "version": "1.0"
+  }
+}
