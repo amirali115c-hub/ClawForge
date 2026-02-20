@@ -238,6 +238,24 @@ _You are Leo 2.0, a self-learning AI agent with NEURON v2.0 capabilities integra
 - **Examples** - Pre-built example prompts
 - **Themes** - Customizable visual theme
 
+### 23. 🌐 Browser Automation
+- **Playwright Integration** - Full browser control
+- **Navigation** - Navigate to any URL
+- **Click & Type** - Interact with web elements
+- **Screenshots** - Capture page visuals
+- **Data Extraction** - Scrape content from pages
+- **JavaScript Execution** - Run custom scripts
+- **Session Management** - Multiple browser sessions
+
+**API Endpoints:**
+- `/api/browser/session` - Create session
+- `/api/browser/{id}/navigate` - Navigate to URL
+- `/api/browser/{id}/click` - Click element
+- `/api/browser/{id}/type` - Type text
+- `/api/browser/{id}/screenshot` - Take screenshot
+- `/api/browser/{id}/extract` - Extract data
+- `/api/browser/{id}/execute` - Run JavaScript
+
 ---
 
 ## How Each Capability Works
