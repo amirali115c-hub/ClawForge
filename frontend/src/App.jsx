@@ -281,39 +281,56 @@ function App() {
     const file = e.target.files[0];
     if (!file) return;
     
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('source', file.name);
-    formData.append('metadata', JSON.stringify({
-      type: file.type,
-      size: file.size
-    }));
-    
-    try {
-      const response = await fetch(`${API_BASE}/api/rag/document/add`, {
-        method: 'POST',
-        body: formData,
-      });
+    // Read file content as text
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const content = event.target.result;
       
-      const result = await response.json();
-      
-      if (result.status === 'ok') {
+      try {
+        const response = await fetch(`${API_BASE}/api/rag/document/add`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: content.substring(0, 50000), // Limit to 50k chars
+            source: file.name,
+            metadata: {
+              type: file.type,
+              size: file.size,
+              uploaded: new Date().toISOString()
+            }
+          }),
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'ok') {
+          setChatMessages(prev => [...prev, { 
+            role: 'system', 
+            content: `📎 File "${file.name}" uploaded to knowledge base! (${file.size} bytes)` 
+          }]);
+        } else {
+          setChatMessages(prev => [...prev, { 
+            role: 'system', 
+            content: `❌ Upload failed: ${result.error || 'Unknown error'}` 
+          }]);
+        }
+      } catch (err) {
         setChatMessages(prev => [...prev, { 
           role: 'system', 
-          content: `📎 File "${file.name}" uploaded to knowledge base! (${file.size} bytes)` 
-        }]);
-      } else {
-        setChatMessages(prev => [...prev, { 
-          role: 'system', 
-          content: `❌ Upload failed: ${result.error || 'Unknown error'}` 
+          content: `❌ Upload error: ${err.message}` 
         }]);
       }
-    } catch (err) {
+    };
+    
+    reader.onerror = () => {
       setChatMessages(prev => [...prev, { 
         role: 'system', 
-        content: `❌ Upload error: ${err.message}` 
+        content: `❌ Error reading file` 
       }]);
-    }
+    };
+    
+    // Read as text for .txt, .md, .json, .py, .js, etc.
+    reader.readAsText(file);
     
     // Reset input
     e.target.value = '';

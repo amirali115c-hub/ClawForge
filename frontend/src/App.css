@@ -1,4 +1,4 @@
-/* Leo 2.0 - Neon Blue Theme - Full Screen */
+/* Leo 2.0 - Neon Blue Theme - Fixed */
 
 * {
   margin: 0;
@@ -28,10 +28,7 @@ body {
   flex-direction: column;
   height: 100vh;
   width: 100%;
-  max-width: 100%;
-  margin: 0;
-  background: rgba(10, 15, 30, 0.98);
-  border: none;
+  overflow: hidden;
 }
 
 .app-header {
@@ -93,14 +90,8 @@ body {
   box-shadow: 0 0 20px rgba(0, 212, 255, 0.35);
 }
 
+/* Main content area */
 .main {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  min-height: 0;
-}
-
-.chat-view {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -108,6 +99,16 @@ body {
   min-height: 0;
 }
 
+/* All views */
+.chat-view, .memory-view, .rag-view, .settings-view, .dashboard-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Chat messages area */
 .chat-messages {
   flex: 1;
   overflow-y: auto;
@@ -137,6 +138,7 @@ body {
   background: var(--neon-red);
 }
 
+/* Chat message styles */
 .chat-message {
   max-width: 70%;
   padding: 0.9rem 1.2rem;
@@ -190,11 +192,7 @@ body {
   color: var(--neon-red);
 }
 
-.chat-message-content {
-  line-height: 1.5;
-  white-space: pre-wrap;
-}
-
+/* Chat input area - ALWAYS VISIBLE */
 .chat-input-area {
   padding: 1rem 1.5rem;
   background: rgba(0, 0, 0, 0.45);
@@ -282,12 +280,10 @@ body {
   cursor: not-allowed;
 }
 
-/* Other Views */
-.memory-view, .rag-view, .settings-view, .dashboard-view {
-  flex: 1;
+/* Memory, RAG, Settings views - scrollable */
+.memory-view, .rag-view, .settings-view {
   padding: 1.5rem;
   overflow-y: auto;
-  min-width: 0;
 }
 
 .rag-stats {
@@ -364,7 +360,7 @@ body {
   background: rgba(0, 212, 255, 0.18);
 }
 
-/* Scrollbar Global */
+/* Scrollbar global */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -413,7 +409,7 @@ body {
     font-size: 1.1rem;
   }
   
-  .messages-container {
+  .chat-messages {
     padding: 1rem;
   }
   
