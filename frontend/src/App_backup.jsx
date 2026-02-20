@@ -425,6 +425,9 @@ function App() {
     { id: 'memory', label: '💾', title: 'Memory' },
     { id: 'rag', label: '📚', title: 'Knowledge' },
     { id: 'security', label: '🛡️', title: 'Security' },
+    { id: 'browser', label: '🌐', title: 'Browser' },
+    { id: 'code', label: '💻', title: 'Code' },
+    { id: 'files', label: '📁', title: 'Files' },
     { id: 'settings', label: '⚙️', title: 'Settings' },
   ];
 
