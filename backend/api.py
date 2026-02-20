@@ -3445,6 +3445,90 @@ async def search_files(q: str = "", path: str = ""):
     results = file_system.search_files(q, path)
     return {"status": "ok", "results": results}
 
+# Web Crawler (uses Browser Engine)
+@app.post("/api/crawler/fetch")
+async def crawl_url(request: Request):
+    """Fetch and parse a URL."""
+    global browser_engine
+    if not BROWSER_AVAILABLE or browser_engine is None:
+        return {"error": "Browser automation not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    url = body.get("url", "")
+    if not url:
+        return {"error": "URL required"}
+    
+    # Create session if not exists
+    sessions = browser_engine.get_active_sessions()
+    if not sessions:
+        session_id = await browser_engine.create_session(headless=True)
+    else:
+        session_id = sessions[0]['session_id']
+    
+    # Navigate to URL
+    nav_result = await browser_engine.navigate(url, session_id)
+    if 'error' in nav_result:
+        return nav_result
+    
+    # Extract content
+    extract_result = await browser_engine.extract(None, session_id)
+    
+    # Get page info
+    info = await browser_engine.get_page_info(session_id)
+    
+    return {
+        "status": "ok",
+        "url": url,
+        "title": info.get("title"),
+        "content": str(extract_result.get("data", ""))[:10000]
+    }
+
+# Terminal Execution
+@app.post("/api/terminal/execute")
+async def execute_terminal(request: Request):
+    """Execute terminal command."""
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    command = body.get("command", "")
+    
+    if not command:
+        return {"error": "Command required"}
+    
+    # Security: block dangerous commands
+    dangerous = ['rm -rf', 'del /', 'format', 'dd if=', 'mkfs']
+    for d in dangerous:
+        if d in command.lower():
+            return {"error": "Command blocked for security"}
+    
+    try:
+        import subprocess
+        result = subprocess.run(
+            command,
+            shell=True,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        return {
+            "status": "ok",
+            "command": command,
+            "output": result.stdout[:5000],
+            "error": result.stderr[:1000] if result.stderr else "",
+            "exit_code": result.returncode
+        }
+    except subprocess.TimeoutExpired:
+        return {"error": "Command timed out"}
+    except Exception as e:
+        return {"error": str(e)}
+
 # Gradio UI Route
 @app.get("/gradio")
 async def serve_gradio():
