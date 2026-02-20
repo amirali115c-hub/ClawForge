@@ -591,63 +591,6 @@ function App() {
   );
 
   // Placeholder functions for new tabs - defined before use
-  const renderBrowser = () => (
-    <div className="dashboard-view">
-      <h2 style={{ marginBottom: '1rem', color: 'var(--neon-blue)' }}>Browser Automation</h2>
-      <p>Click Start Browser to begin</p>
-    </div>
-  );
-  const renderCode = () => (
-    <div className="dashboard-view">
-      <h2 style={{ marginBottom: '1rem', color: 'var(--neon-blue)' }}>Code Interpreter</h2>
-      <p>Write and run Python code</p>
-    </div>
-  );
-  const renderFiles = () => (
-    <div className="dashboard-view">
-      <h2 style={{ marginBottom: '1rem', color: 'var(--neon-blue)' }}>File Manager</h2>
-      <p>Browse and manage files</p>
-    </div>
-  );
-
-  const renderContent = () => {
-    switch(activeTab) {
-      case 'chat': return renderChat();
-      case 'dashboard': return renderDashboard();
-      case 'memory': return renderMemory();
-      case 'rag': return renderRag();
-      case 'security': return renderSecurity();
-      case 'browser': return renderBrowser();
-      case 'code': return renderCode();
-      case 'files': return renderFiles();
-      case 'settings': return renderSettings();
-      default: return (
-        <div className="dashboard-view">
-          <div className="dashboard-header">
-            <h2>{tabs.find(t => t.id === activeTab)?.title}</h2>
-            <p>This feature is coming soon!</p>
-          </div>
-        </div>
-      );
-    }
-  };
-
-  const renderMemory = () => (
-    <div className="memory-view">
-      <h2 style={{ marginBottom: '1.5rem', color: 'var(--neon-blue)' }}>💾 Memory</h2>
-      <div className="rag-stats">
-        <div className="stat-box">
-          <div className="stat-value">{memoryStats?.total || 0}</div>
-          <div className="stat-label">Total Memories</div>
-        </div>
-        <div className="stat-box">
-          <div className="stat-value">{memoryStats?.session_count || 0}</div>
-          <div className="stat-label">Sessions</div>
-        </div>
-      </div>
-      <p style={{ color: 'var(--text-secondary)' }}>Your memories and learned concepts appear here.</p>
-    </div>
-  );
 
   const renderRag = () => (
     <div className="rag-view">
