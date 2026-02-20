@@ -283,6 +283,189 @@ async def health_check():
         "version": "2.0.0"
     }
 
+from fastapi import Request
+
+# Task Progress Tracker
+task_progress = {
+    "status": "idle",
+    "task": "",
+    "time_remaining": 0,
+    "total_time": 0,
+    "steps": []
+}
+
+@app.get("/api/task/status")
+async def get_task_status():
+    """Get current task progress for timer display."""
+    return task_progress
+
+@app.post("/api/task/start")
+async def start_task(request: Request):
+    """Start a new task with timer."""
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    task_progress["status"] = "working"
+    task_progress["task"] = body.get("task", "Task")
+    task_progress["total_time"] = body.get("duration", 3600)
+    task_progress["time_remaining"] = task_progress["total_time"]
+    task_progress["steps"] = body.get("steps", [])
+    return {"status": "started"}
+
+@app.post("/api/task/update")
+async def update_task(request: Request):
+    """Update task progress."""
+    body = await request.json()
+    if "time_remaining" in body:
+        task_progress["time_remaining"] = body["time_remaining"]
+    if "step" in body:
+        for step in task_progress["steps"]:
+            step["done"] = True
+            if step["name"] == body["step"]:
+                break
+        for step in task_progress["steps"]:
+            step["active"] = False
+        for step in task_progress["steps"]:
+            if not step.get("done"):
+                step["active"] = True
+                break
+    return {"status": "updated"}
+
+@app.post("/api/task/complete")
+async def complete_task():
+    """Mark task as complete."""
+    task_progress["status"] = "idle"
+    task_progress["task"] = ""
+    task_progress["time_remaining"] = 0
+    task_progress["steps"] = []
+    return {"status": "completed"}
+
+# Sentiment Analysis
+SENTIMENT_AVAILABLE = False
+try:
+    from sentiment_engine import SentimentAnalyzer, analyze_sentiment, get_response_tone
+    SENTIMENT_AVAILABLE = True
+    print("[SENTIMENT] Sentiment Analysis loaded")
+except ImportError as e:
+    print(f"[SENTIMENT] Warning: {e}")
+
+@app.post("/api/sentiment/analyze")
+async def analyze_text_sentiment(request: Request):
+    """Analyze sentiment of input text."""
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    text = body.get("text", "")
+    if not text:
+        return {"error": "No text provided"}
+    
+    if not SENTIMENT_AVAILABLE:
+        return {"error": "Sentiment engine not available"}
+    
+    result = analyze_sentiment(text)
+    return result
+
+@app.get("/api/sentiment/tone")
+async def get_sentiment_tone(text: str):
+    """Get appropriate response tone based on sentiment."""
+    if not SENTIMENT_AVAILABLE:
+        return {"error": "Sentiment engine not available"}
+    
+    tone = get_response_tone(text)
+    return {"tone": tone}
+
+# Tool Calling
+TOOL_CALLING_AVAILABLE = False
+try:
+    from tool_calling_engine import ToolCallingEngine, should_use_tool, get_tool_stats
+    TOOL_CALLING_AVAILABLE = True
+    print("[TOOL-CALLING] Tool Calling Engine loaded")
+except ImportError as e:
+    print(f"[TOOL-CALLING] Warning: {e}")
+
+@app.post("/api/tools/detect")
+async def detect_tool_use(request: Request):
+    """Detect if a tool should be used for the given message."""
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    message = body.get("message", "")
+    if not message:
+        return {"error": "No message provided"}
+    
+    if not TOOL_CALLING_AVAILABLE:
+        return {"error": "Tool calling engine not available"}
+    
+    tool_call = should_use_tool(message)
+    if tool_call:
+        return {
+            "should_use_tool": True,
+            "tool": tool_call.tool.value,
+            "confidence": tool_call.confidence,
+            "reason": tool_call.reason,
+            "parameters": tool_call.parameters
+        }
+    else:
+        return {
+            "should_use_tool": False,
+            "tool": "none",
+            "confidence": 0,
+            "reason": "No tool needed"
+        }
+
+@app.get("/api/tools/stats")
+async def get_tools_statistics():
+    """Get tool calling statistics."""
+    if not TOOL_CALLING_AVAILABLE:
+        return {"error": "Tool calling engine not available"}
+    return get_tool_stats()
+
+# Conversation Summarizer
+SUMMARIZER_AVAILABLE = False
+try:
+    from conversation_summarizer import summarize_conversation, get_resume_summary
+    SUMMARIZER_AVAILABLE = True
+    print("[SUMMARIZER] Conversation Summarizer loaded")
+except ImportError as e:
+    print(f"[SUMMARIZER] Warning: {e}")
+
+@app.post("/api/conversation/summarize")
+async def summarize_convo(request: Request):
+    """Summarize a conversation."""
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    messages = body.get("messages", [])
+    
+    if not SUMMARIZER_AVAILABLE:
+        return {"error": "Summarizer not available"}
+    
+    result = summarize_conversation(messages)
+    return result
+
+@app.post("/api/conversation/resume")
+async def get_resume_convo(request: Request):
+    """Get summary for resuming conversation."""
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    messages = body.get("messages", [])
+    
+    if not SUMMARIZER_AVAILABLE:
+        return {"error": "Summarizer not available"}
+    
+    result = get_resume_summary(messages)
+    return {"resume_summary": result}
+
 @app.get("/api/health/detailed")
 async def detailed_health_check():
     """Detailed health check with all service statuses."""
