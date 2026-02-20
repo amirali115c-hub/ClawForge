@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
-const API_BASE = '';  // Use proxy - relative to frontend
+const API_BASE = 'http://127.0.0.1:9000';  // Leo 2.0 Backend
 
 // Simple Markdown Parser
 function parseMarkdown(text) {
