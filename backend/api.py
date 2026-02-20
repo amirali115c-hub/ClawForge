@@ -948,6 +948,188 @@ async def get_tool_stats():
     stats = tool_calling_engine.get_stats()
     return {"status": "ok", "stats": stats}
 
+# Multi-Agent System
+MULTI_AGENT_AVAILABLE = False
+try:
+    from multi_agent import MultiAgentSystem, AgentRole, get_multi_agent_system
+    MULTI_AGENT_AVAILABLE = True
+    print("[MULTI-AGENT] Multi-Agent System loaded")
+except ImportError as e:
+    print(f"[MULTI-AGENT] Warning: {e}")
+
+multi_agent_system = None
+
+@app.get("/api/agents")
+async def list_agents():
+    """List all agents."""
+    global multi_agent_system
+    if not MULTI_AGENT_AVAILABLE:
+        return {"error": "Multi-agent system not available"}
+    
+    if multi_agent_system is None:
+        multi_agent_system = get_multi_agent_system()
+    
+    agents = multi_agent_system.list_agents()
+    return {"status": "ok", "agents": agents}
+
+@app.get("/api/agents/{agent_id}")
+async def get_agent(agent_id: str):
+    """Get agent details."""
+    global multi_agent_system
+    if not MULTI_AGENT_AVAILABLE or multi_agent_system is None:
+        return {"error": "Multi-agent system not available"}
+    
+    agent = multi_agent_system.get_agent(agent_id)
+    if not agent:
+        return {"error": "Agent not found"}
+    
+    return {
+        "status": "ok",
+        "agent": {
+            "id": agent.id,
+            "name": agent.name,
+            "role": agent.role.value,
+            "description": agent.description,
+            "instructions": agent.instructions,
+            "tools": agent.tools,
+            "status": agent.status.value,
+            "current_task": agent.current_task
+        }
+    }
+
+@app.post("/api/agents")
+async def create_agent(request: Request):
+    """Create a new agent."""
+    global multi_agent_system
+    if not MULTI_AGENT_AVAILABLE:
+        return {"error": "Multi-agent system not available"}
+    
+    if multi_agent_system is None:
+        multi_agent_system = get_multi_agent_system()
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    name = body.get("name", "New Agent")
+    role = body.get("role", "general")
+    description = body.get("description", "")
+    instructions = body.get("instructions", "")
+    tools = body.get("tools", [])
+    
+    try:
+        role_enum = AgentRole(role)
+    except:
+        role_enum = AgentRole.GENERAL
+    
+    agent_id = multi_agent_system.create_agent(
+        name=name,
+        role=role_enum,
+        description=description,
+        instructions=instructions,
+        tools=tools
+    )
+    
+    return {"status": "ok", "agent_id": agent_id}
+
+@app.post("/api/tasks")
+async def create_task(request: Request):
+    """Create a new task."""
+    global multi_agent_system
+    if not MULTI_AGENT_AVAILABLE or multi_agent_system is None:
+        return {"error": "Multi-agent system not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    description = body.get("description", "")
+    assigned_agent = body.get("assigned_agent", "")
+    
+    task_id = multi_agent_system.create_task(description, assigned_agent)
+    return {"status": "ok", "task_id": task_id}
+
+@app.post("/api/tasks/{task_id}/assign/{agent_id}")
+async def assign_task(task_id: str, agent_id: str):
+    """Assign a task to an agent."""
+    global multi_agent_system
+    if not MULTI_AGENT_AVAILABLE or multi_agent_system is None:
+        return {"error": "Multi-agent system not available"}
+    
+    success = multi_agent_system.assign_task(task_id, agent_id)
+    return {"status": "ok" if success else "error", "assigned": success}
+
+@app.post("/api/tasks/{task_id}/execute")
+async def execute_task(task_id: str):
+    """Execute a task."""
+    global multi_agent_system
+    if not MULTI_AGENT_AVAILABLE or multi_agent_system is None:
+        return {"error": "Multi-agent system not available"}
+    
+    result = await multi_agent_system.execute_task(task_id)
+    return result
+
+@app.post("/api/tasks/execute-parallel")
+async def execute_tasks_parallel(request: Request):
+    """Execute multiple tasks in parallel."""
+    global multi_agent_system
+    if not MULTI_AGENT_AVAILABLE or multi_agent_system is None:
+        return {"error": "Multi-agent system not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    task_ids = body.get("task_ids", [])
+    
+    if not task_ids:
+        return {"error": "No tasks provided"}
+    
+    results = await multi_agent_system.run_parallel(task_ids)
+    return {"status": "ok", "results": results}
+
+@app.get("/api/agents/messages")
+async def get_agent_messages(agent_id: str = None):
+    """Get messages between agents."""
+    global multi_agent_system
+    if not MULTI_AGENT_AVAILABLE or multi_agent_system is None:
+        return {"error": "Multi-agent system not available"}
+    
+    messages = multi_agent_system.get_messages(agent_id)
+    return {"status": "ok", "messages": messages}
+
+@app.post("/api/agents/message")
+async def send_agent_message(request: Request):
+    """Send a message between agents."""
+    global multi_agent_system
+    if not MULTI_AGENT_AVAILABLE or multi_agent_system is None:
+        return {"error": "Multi-agent system not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    from_agent = body.get("from_agent", "")
+    to_agent = body.get("to_agent", "")
+    content = body.get("content", "")
+    
+    msg_id = multi_agent_system.send_message(from_agent, to_agent, content)
+    return {"status": "ok", "message_id": msg_id}
+
+@app.get("/api/agents/status")
+async def get_agents_status():
+    """Get multi-agent system status."""
+    global multi_agent_system
+    if not MULTI_AGENT_AVAILABLE or multi_agent_system is None:
+        return {"error": "Multi-agent system not available"}
+    
+    status = multi_agent_system.get_system_status()
+    return {"status": "ok", "status": status}
+
 # Structured Response Formatter
 STRUCTURED_AVAILABLE = False
 try:
