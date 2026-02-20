@@ -732,7 +732,10 @@ function App() {
       </nav>
 
       <main className="main">
-        {renderContent()}
+        {activeTab === 'browser' && <div style={{padding:'2rem'}}><h2>Browser</h2><p>Click Start Browser to begin</p></div>}
+        {activeTab === 'code' && <div style={{padding:'2rem'}}><h2>Code</h2><p>Write and run Python</p></div>}
+        {activeTab === 'files' && <div style={{padding:'2rem'}}><h2>Files</h2><p>Browse files</p></div>}
+        {(activeTab === 'chat' || activeTab === 'memory' || activeTab === 'rag' || activeTab === 'security' || activeTab === 'settings') && renderContent()}
       </main>
     </div>
   );
