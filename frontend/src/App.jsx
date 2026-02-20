@@ -340,6 +340,7 @@ function App() {
     { id: 'chat', label: '💬', title: 'Chat' },
     { id: 'memory', label: '💾', title: 'Memory' },
     { id: 'rag', label: '📚', title: 'Knowledge' },
+    { id: 'security', label: '🛡️', title: 'Security' },
     { id: 'settings', label: '⚙️', title: 'Settings' },
   ];
 
@@ -508,6 +509,7 @@ function App() {
       case 'dashboard': return renderDashboard();
       case 'memory': return renderMemory();
       case 'rag': return renderRag();
+      case 'security': return renderSecurity();
       case 'settings': return renderSettings();
       default: return (
         <div className="dashboard-view">
@@ -556,6 +558,47 @@ function App() {
       </div>
       <button className="btn btn-primary" style={{ marginRight: '1rem' }}>+ Add Document</button>
       <button className="btn btn-secondary">🔍 Search</button>
+    </div>
+  );
+
+  const renderSecurity = () => (
+    <div className="settings-view">
+      <h2 style={{ marginBottom: '1.5rem', color: 'var(--neon-blue)' }}>🛡️ Security</h2>
+      <div className="settings-section">
+        <div className="settings-title">Security Status</div>
+        <p style={{ color: '#51cf66', fontSize: '1.2rem', marginBottom: '1rem' }}>
+          ✅ Protected
+        </p>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <span style={{ padding: '0.4rem 0.8rem', background: 'rgba(0,212,255,0.2)', borderRadius: '6px', fontSize: '0.85rem' }}>
+            🛡️ Custodian Active
+          </span>
+          <span style={{ padding: '0.4rem 0.8rem', background: 'rgba(0,212,255,0.2)', borderRadius: '6px', fontSize: '0.85rem' }}>
+            🔒 Privacy First
+          </span>
+          <span style={{ padding: '0.4rem 0.8rem', background: 'rgba(0,212,255,0.2)', borderRadius: '6px', fontSize: '0.85rem' }}>
+            📝 Audit Logging
+          </span>
+        </div>
+      </div>
+      <div className="settings-section">
+        <div className="settings-title">Risk Score</div>
+        <p style={{ fontSize: '2rem', color: security.riskScore < 50 ? '#51cf66' : '#ff6b6b' }}>
+          {security.riskScore || 0}%
+        </p>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          {security.riskScore < 30 ? 'Low risk - All systems secure' : security.riskScore < 70 ? 'Medium risk - Monitor activities' : 'High risk - Review required'}
+        </p>
+      </div>
+      <div className="settings-section">
+        <div className="settings-title">Data Protection</div>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+          • All data stored locally<br/>
+          • No personal data collection<br/>
+          • Request monitoring enabled<br/>
+          • External threats blocked
+        </p>
+      </div>
     </div>
   );
 

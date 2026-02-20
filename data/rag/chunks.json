@@ -6,5 +6,13 @@
     "chunk_index": 0,
     "doc_id": "78ad0ff5764e089c",
     "created_at": "2026-02-20T23:22:15.096090"
+  },
+  "e352e19c9860e1ba_0": {
+    "id": "e352e19c9860e1ba_0",
+    "content": "This is a test document about Python programming.",
+    "source": "test.txt",
+    "chunk_index": 0,
+    "doc_id": "e352e19c9860e1ba",
+    "created_at": "2026-02-21T00:07:35.430150"
   }
 }

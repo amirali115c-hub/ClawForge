@@ -8,5 +8,15 @@
     },
     "created_at": "2026-02-20T23:22:15.095998",
     "chunk_count": 1
+  },
+  "e352e19c9860e1ba": {
+    "id": "e352e19c9860e1ba",
+    "source": "test.txt",
+    "content": "This is a test document about Python programming.",
+    "metadata": {
+      "type": "text/plain"
+    },
+    "created_at": "2026-02-21T00:07:35.428716",
+    "chunk_count": 1
   }
 }
