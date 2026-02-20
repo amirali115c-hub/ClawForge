@@ -3087,6 +3087,176 @@ async def get_dashboard_status():
     
     return {"status": "ok", "dashboard": status}
 
+# Browser Automation Engine
+BROWSER_AVAILABLE = False
+try:
+    from browser_engine import BrowserAutomationEngine, get_browser_engine
+    BROWSER_AVAILABLE = True
+    print("[BROWSER] Browser Automation Engine loaded")
+except ImportError as e:
+    print(f"[BROWSER] Warning: {e}")
+
+browser_engine = None
+
+@app.post("/api/browser/session")
+async def create_browser_session(request: Request):
+    """Create a new browser session."""
+    global browser_engine
+    if not BROWSER_AVAILABLE:
+        return {"error": "Browser automation not available. Run: pip install playwright"}
+    
+    if browser_engine is None:
+        browser_engine = get_browser_engine()
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    headless = body.get("headless", True)
+    
+    session_id = await browser_engine.create_session(headless=headless)
+    
+    return {"status": "ok", "session_id": session_id}
+
+@app.post("/api/browser/{session_id}/navigate")
+async def browser_navigate(session_id: str, request: Request):
+    """Navigate to a URL."""
+    global browser_engine
+    if not BROWSER_AVAILABLE or browser_engine is None:
+        return {"error": "Browser automation not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    url = body.get("url", "")
+    
+    if not url:
+        return {"error": "URL required"}
+    
+    result = await browser_engine.navigate(url, session_id)
+    return result
+
+@app.post("/api/browser/{session_id}/click")
+async def browser_click(session_id: str, request: Request):
+    """Click an element."""
+    global browser_engine
+    if not BROWSER_AVAILABLE or browser_engine is None:
+        return {"error": "Browser automation not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    selector = body.get("selector", "")
+    
+    if not selector:
+        return {"error": "Selector required"}
+    
+    result = await browser_engine.click(selector, session_id)
+    return result
+
+@app.post("/api/browser/{session_id}/type")
+async def browser_type(session_id: str, request: Request):
+    """Type text into an element."""
+    global browser_engine
+    if not BROWSER_AVAILABLE or browser_engine is None:
+        return {"error": "Browser automation not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    selector = body.get("selector", "")
+    text = body.get("text", "")
+    
+    if not selector or not text:
+        return {"error": "Selector and text required"}
+    
+    result = await browser_engine.type(selector, text, session_id)
+    return result
+
+@app.get("/api/browser/{session_id}/screenshot")
+async def browser_screenshot(session_id: str):
+    """Take a screenshot."""
+    global browser_engine
+    if not BROWSER_AVAILABLE or browser_engine is None:
+        return {"error": "Browser automation not available"}
+    
+    result = await browser_engine.screenshot(session_id)
+    return result
+
+@app.post("/api/browser/{session_id}/extract")
+async def browser_extract(session_id: str, request: Request):
+    """Extract data from page."""
+    global browser_engine
+    if not BROWSER_AVAILABLE or browser_engine is None:
+        return {"error": "Browser automation not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    selector = body.get("selector")
+    
+    result = await browser_engine.extract(selector, session_id)
+    return result
+
+@app.post("/api/browser/{session_id}/execute")
+async def browser_execute(session_id: str, request: Request):
+    """Execute JavaScript."""
+    global browser_engine
+    if not BROWSER_AVAILABLE or browser_engine is None:
+        return {"error": "Browser automation not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    script = body.get("script", "")
+    
+    if not script:
+        return {"error": "Script required"}
+    
+    result = await browser_engine.execute_script(script, session_id)
+    return result
+
+@app.get("/api/browser/{session_id}/info")
+async def browser_info(session_id: str):
+    """Get page info."""
+    global browser_engine
+    if not BROWSER_AVAILABLE or browser_engine is None:
+        return {"error": "Browser automation not available"}
+    
+    result = await browser_engine.get_page_info(session_id)
+    return result
+
+@app.post("/api/browser/{session_id}/close")
+async def browser_close(session_id: str):
+    """Close browser session."""
+    global browser_engine
+    if not BROWSER_AVAILABLE or browser_engine is None:
+        return {"error": "Browser automation not available"}
+    
+    result = await browser_engine.close_session(session_id)
+    return result
+
+@app.get("/api/browser/sessions")
+async def list_browser_sessions():
+    """List all browser sessions."""
+    global browser_engine
+    if not BROWSER_AVAILABLE or browser_engine is None:
+        return {"error": "Browser automation not available"}
+    
+    sessions = browser_engine.get_active_sessions()
+    return {"status": "ok", "sessions": sessions}
+
 # Gradio UI Route
 @app.get("/gradio")
 async def serve_gradio():

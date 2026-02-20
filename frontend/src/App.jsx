@@ -425,6 +425,7 @@ function App() {
     { id: 'memory', label: '💾', title: 'Memory' },
     { id: 'rag', label: '📚', title: 'Knowledge' },
     { id: 'security', label: '🛡️', title: 'Security' },
+    { id: 'browser', label: '🌐', title: 'Browser' },
     { id: 'settings', label: '⚙️', title: 'Settings' },
   ];
 
@@ -594,6 +595,7 @@ function App() {
       case 'memory': return renderMemory();
       case 'rag': return renderRag();
       case 'security': return renderSecurity();
+      case 'browser': return renderBrowser();
       case 'settings': return renderSettings();
       default: return (
         <div className="dashboard-view">
@@ -685,6 +687,109 @@ function App() {
       </div>
     </div>
   );
+
+  const renderBrowser = () => {
+    const [browserUrl, setBrowserUrl] = useState('');
+    const [browserStatus, setBrowserStatus] = useState('idle');
+    const [pageTitle, setPageTitle] = useState('');
+    const [screenshot, setScreenshot] = useState(null);
+    const [sessionId, setSessionId] = useState(null);
+
+    const createSession = async () => {
+      setBrowserStatus('creating');
+      try {
+        const res = await fetch(`${API_BASE}/api/browser/session`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ headless: false })
+        });
+        const data = await res.json();
+        if (data.session_id) {
+          setSessionId(data.session_id);
+          setBrowserStatus('ready');
+        }
+      } catch (e) {
+        setBrowserStatus('error');
+      }
+    };
+
+    const navigate = async () => {
+      if (!sessionId || !browserUrl) return;
+      setBrowserStatus('navigating');
+      try {
+        const res = await fetch(`${API_BASE}/api/browser/${sessionId}/navigate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: browserUrl })
+        });
+        const data = await res.json();
+        if (data.title) {
+          setPageTitle(data.title);
+          setBrowserStatus('ready');
+          takeScreenshot();
+        }
+      } catch (e) {
+        setBrowserStatus('error');
+      }
+    };
+
+    const takeScreenshot = async () => {
+      if (!sessionId) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/browser/${sessionId}/screenshot`);
+        const data = await res.json();
+        if (data.screenshot) {
+          setScreenshot('data:image/png;base64,' + data.screenshot);
+        }
+      } catch (e) {}
+    };
+
+    return (
+      <div className="browser-view" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <h2 style={{ marginBottom: '1rem', color: 'var(--neon-blue)' }}>🌐 Browser Automation</h2>
+        
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+          {!sessionId ? (
+            <button onClick={createSession} className="neon-btn" style={{ padding: '0.6rem 1.2rem' }}>
+              🚀 Start Browser
+            </button>
+          ) : (
+            <>
+              <input
+                type="text"
+                value={browserUrl}
+                onChange={(e) => setBrowserUrl(e.target.value)}
+                placeholder="Enter URL (e.g., https://example.com)"
+                style={{ flex: 1, padding: '0.6rem', borderRadius: '6px', border: '1px solid #333', background: '#1a1a2e', color: '#fff' }}
+                onKeyDown={(e) => e.key === 'Enter' && navigate()}
+              />
+              <button onClick={navigate} className="neon-btn" style={{ padding: '0.6rem 1rem' }}>
+                Go
+              </button>
+              <button onClick={takeScreenshot} className="neon-btn" style={{ padding: '0.6rem 1rem' }}>
+                📷
+              </button>
+            </>
+          )}
+        </div>
+
+        <div style={{ marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          Status: <span style={{ color: browserStatus === 'ready' ? '#51cf66' : '#f06595' }}>{browserStatus}</span>
+          {pageTitle && <span> • {pageTitle}</span>}
+        </div>
+
+        <div style={{ flex: 1, border: '1px solid #333', borderRadius: '8px', overflow: 'hidden', background: '#0a0a1a', position: 'relative' }}>
+          {screenshot ? (
+            <img src={screenshot} alt="Browser" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#666' }}>
+              {sessionId ? 'Click "Go" to navigate' : 'Click "Start Browser" to begin'}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const renderSettings = () => (
     <div className="settings-view">
