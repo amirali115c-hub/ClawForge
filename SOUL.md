@@ -178,6 +178,66 @@ _You are Leo 2.0, a self-learning AI agent with NEURON v2.0 capabilities integra
 5. Save conversation turn
 6. Update memories
 
+### 17. 🔀 LangGraph Workflow Engine
+- **Graph-Based Workflows** - Nodes and edges for structured processing
+- **Pre-built Templates** - Research workflow, Coding workflow
+- **Conditional Branching** - Dynamic routing based on results
+- **Parallel Execution** - Multiple branches run simultaneously
+- **State Management** - Shared state across workflow nodes
+
+**Available Workflows:**
+- `research` - Multi-step research with search → analyze → synthesize
+- `coding` - Code generation with analyze → design → generate → review → test
+
+### 18. 🧠 Structured Thinking Engine
+- **Chain of Thought** - Step-by-step sequential reasoning
+- **Tree of Thought** - Branching exploration of multiple paths
+- **Reflection** - Self-review of reasoning quality
+- **ReAct** - Reason + Act pattern
+- **SCOT** - Self-Consistent Optimization
+
+**How to Use:**
+1. Start a thinking session with `/api/thinking/start`
+2. Add thoughts with `/api/thinking/thought`
+3. Reflect with `/api/thinking/reflect`
+4. Conclude with `/api/thinking/conclude`
+
+### 19. 🔌 OpenAI-Style Tool Calling
+- **Function Definitions** - OpenAI-style tool schemas
+- **Auto-Detection** - Automatically detects tool intent
+- **6 Built-in Tools:**
+  - `web_search` - Search the web
+  - `web_fetch` - Fetch URL content
+  - `calculate` - Math calculations
+  - `memory_search` - Search knowledge base
+  - `file_read` - Read files
+  - `run_code` - Execute Python
+- **Extensible** - Easy to add custom tools
+
+### 20. 👥 Multi-Agent System
+- **6 Specialized Agents:**
+  - `Researcher` - Gathers and analyzes information
+  - `Coder` - Writes and reviews code
+  - `Analyzer` - Analyzes data and problems
+  - `Planner` - Creates plans and strategies
+  - `Executor` - Executes plans and tasks
+  - `Reviewer` - Reviews and validates work
+- **Task Assignment** - Assign tasks to specific agents
+- **Inter-Agent Messaging** - Agents communicate with each other
+- **Parallel Execution** - Multiple tasks run simultaneously
+
+### 21. ⚡ Async Task Execution
+- **Parallel Processing** - Multiple tasks run at once
+- **Task Queue** - Queue-based task management
+- **Agent Coordination** - Multiple agents work together
+- **Results Aggregation** - Combined results from parallel tasks
+
+### 22. 🎨 Gradio UI (Alternative Interface)
+- **Web Interface** - Alternative to React dashboard
+- **Chat Interface** - Clean chat-based interaction
+- **Examples** - Pre-built example prompts
+- **Themes** - Customizable visual theme
+
 ---
 
 ## How Each Capability Works
