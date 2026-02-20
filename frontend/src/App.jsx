@@ -199,7 +199,8 @@ function App() {
       const data = await res.json();
       
       if (data.status === 'success') {
-        let responseText = data.response;
+        // Ensure response is a string (convert if needed)
+        let responseText = typeof data.response === 'string' ? data.response : JSON.stringify(data.response);
         let modelNote = '';
         
         // For smart router, show which model was used
@@ -213,7 +214,9 @@ function App() {
         // Auto-learn from this interaction (NEURON v2.0)
         triggerAutoLearn(userMessage);
       } else {
-        setChatMessages(prev => [...prev, { role: 'assistant', content: data.message || 'Error: ' + data.error }]);
+        // Ensure message is a string
+        let errorMsg = typeof data.message === 'string' ? data.message : JSON.stringify(data.message || data.error || 'Unknown error');
+        setChatMessages(prev => [...prev, { role: 'assistant', content: 'Error: ' + errorMsg }]);
       }
     } catch (e) {
       handleDisconnect();

@@ -399,6 +399,56 @@ class ContextManager:
             "sensitive_data_accessed": False
         }
         self._save_state()
+    
+    # =========================================================================
+    # LEO 2.0 API METHODS
+    # =========================================================================
+    
+    def add_memory(self, key: str, value: Any, category: str = "fact", importance: int = 5, tags: List[str] = None):
+        """Add a long-term memory."""
+        memories = self.state.get("longterm_memories", {})
+        new_key = key
+        if key in memories:
+            new_key = f"{key}_{datetime.now().strftime('%H%M%S')}"
+        memories[new_key] = {
+            'value': value,
+            'category': category,
+            'importance': importance,
+            'tags': tags or [],
+            'created_at': datetime.now().isoformat(),
+        }
+        self.state["longterm_memories"] = memories
+        self._save_state()
+        return new_key
+    
+    def get_memory(self, key: str) -> Optional[Dict]:
+        """Get a long-term memory."""
+        memories = self.state.get("longterm_memories", {})
+        return memories.get(key)
+    
+    def search_memories(self, query: str, category: str = None, limit: int = 10) -> List:
+        """Search long-term memories."""
+        memories = self.state.get("longterm_memories", {})
+        results = []
+        query_lower = query.lower()
+        for mem_key, mem in memories.items():
+            if category and mem.get('category') != category:
+                continue
+            value_str = str(mem.get('value', '')).lower()
+            if query_lower in value_str:
+                results.append((mem_key, mem))
+        return results[:limit]
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get context manager statistics."""
+        memories = self.state.get("longterm_memories", {})
+        return {
+            'session_entries': len(self.state.get("conversation_history", [])),
+            'memory_entries': len(memories),
+            'preference_entries': len(self.state.get("user_context", {}).get("preferences", {})),
+            'cache_size': 0,
+            'context_dir': str(MEMORY_DIR),
+        }
 
 
 # Singleton instance
@@ -428,6 +478,60 @@ def add_to_history(entry: Dict[str, Any]):
 def get_resume_context() -> str:
     """Get context for resuming"""
     return get_context_manager().get_resume_context()
+
+
+# ============================================================================
+# NEW METHODS FOR LEO 2.0 API
+# ============================================================================
+
+def add_memory(key: str, value: Any, category: str = "fact", importance: int = 5, tags: List[str] = None):
+    """Add a long-term memory."""
+    cm = get_context_manager()
+    memories = cm.state.get("longterm_memories", {})
+    if key in memories:
+        key = f"{key}_{datetime.now().strftime('%H%M%S')}"
+    memories[key] = {
+        'value': value,
+        'category': category,
+        'importance': importance,
+        'tags': tags or [],
+        'created_at': datetime.now().isoformat(),
+    }
+    cm.state["longterm_memories"] = memories
+    cm._save_state()
+    return key
+
+def get_memory(key: str) -> Optional[Dict]:
+    """Get a long-term memory."""
+    cm = get_context_manager()
+    memories = cm.state.get("longterm_memories", {})
+    return memories.get(key)
+
+def search_memories(query: str, category: str = None, limit: int = 10) -> List:
+    """Search long-term memories."""
+    cm = get_context_manager()
+    memories = cm.state.get("longterm_memories", {})
+    results = []
+    query_lower = query.lower()
+    for key, mem in memories.items():
+        if category and mem.get('category') != category:
+            continue
+        value_str = str(mem.get('value', '')).lower()
+        if query_lower in value_str:
+            results.append((key, mem))
+    return results[:limit]
+
+def get_stats() -> Dict[str, Any]:
+    """Get context manager statistics."""
+    cm = get_context_manager()
+    memories = cm.state.get("longterm_memories", {})
+    return {
+        'session_entries': len(cm.state.get("conversation_history", [])),
+        'memory_entries': len(memories),
+        'preference_entries': len(cm.state.get("user_context", {}).get("preferences", {})),
+        'cache_size': 0,
+        'context_dir': str(MEMORY_DIR),
+    }
 
 def end_session(summary: Optional[str] = None):
     """End current session"""

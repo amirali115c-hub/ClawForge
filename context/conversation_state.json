@@ -1,7 +1,7 @@
 {
   "conversation_id": "28e64677",
   "started_at": "2026-02-19T04:45:55.382165",
-  "last_updated": "2026-02-19T04:45:55.393444",
+  "last_updated": "2026-02-20T22:23:26.083584",
   "current_task": "Deploy Chat Online app",
   "task_status": "waiting",
   "where_we_left_off": "Fixed all bugs",
@@ -17,5 +17,14 @@
     "sensitive_data_accessed": false
   },
   "privacy_level": "standard",
-  "data_retention": "session_only"
+  "data_retention": "session_only",
+  "longterm_memories": {
+    "test_memory": {
+      "value": "This is a test",
+      "category": "fact",
+      "importance": 5,
+      "tags": [],
+      "created_at": "2026-02-20T22:23:26.083573"
+    }
+  }
 }

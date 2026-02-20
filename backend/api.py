@@ -111,6 +111,36 @@ from features import (
 )
 
 # ============================================================================
+# NEW: PROMPT ENGINE & CONTEXT MANAGEMENT
+# ============================================================================
+
+try:
+    from prompt_engine import PromptUnderstandingEngine, IntentType, ComplexityLevel
+    PROMPT_ENGINE_AVAILABLE = True
+    print("[PROMPT-ENGINE] Advanced Prompt Understanding loaded")
+except ImportError as e:
+    PROMPT_ENGINE_AVAILABLE = False
+    print(f"[PROMPT-ENGINE] Warning: {e}")
+
+try:
+    from response_delivery import ResponseDeliveryEngine, ChannelType, FormattedResponse
+    RESPONSE_ENGINE_AVAILABLE = True
+    print("[RESPONSE-ENGINE] Response Delivery loaded")
+except ImportError as e:
+    RESPONSE_ENGINE_AVAILABLE = False
+    print(f"[RESPONSE-ENGINE] Warning: {e}")
+
+try:
+    from context_manager import ContextManager
+    CONTEXT_MGR_AVAILABLE = True
+    context_manager = ContextManager()
+    print("[CONTEXT-MGR] Context Manager loaded")
+except ImportError as e:
+    CONTEXT_MGR_AVAILABLE = False
+    context_manager = None
+    print(f"[CONTEXT-MGR] Warning: {e}")
+
+# ============================================================================
 # APP LIFESPAN
 # ============================================================================
 
@@ -306,6 +336,301 @@ async def detailed_health_check():
         },
         "memory": memory_stats
     }
+
+# ============================================================================
+# NEW: PROMPT UNDERSTANDING ENDPOINTS (OpenClaw-style)
+# ============================================================================
+
+class ParseRequest(BaseModel):
+    message: str
+    session_context: Dict = None
+
+class ParseResponse(BaseModel):
+    intent_type: str
+    complexity: str
+    entities: List[str]
+    keywords: List[str]
+    language: str
+    sentiment: str
+    urgency: str
+    requires_web: bool
+    requires_code: bool
+    requires_planning: bool
+    action_required: bool
+
+@app.post("/api/understand/parse")
+async def parse_prompt(request: ParseRequest):
+    """
+    Parse user prompt using OpenClaw-style understanding engine.
+    Returns intent, complexity, entities, and routing information.
+    """
+    if not PROMPT_ENGINE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Prompt engine not available")
+    
+    try:
+        engine = PromptUnderstandingEngine()
+        parsed = engine.parse(request.message, request.session_context)
+        
+        return {
+            "status": "success",
+            "parsed": {
+                "intent_type": parsed.intent_type.value,
+                "complexity": parsed.complexity.value,
+                "entities": parsed.entities,
+                "keywords": parsed.keywords,
+                "language": parsed.language,
+                "sentiment": parsed.sentiment,
+                "urgency": parsed.urgency,
+                "requires_web": parsed.requires_web,
+                "requires_code": parsed.requires_code,
+                "requires_planning": parsed.requires_planning,
+                "action_required": parsed.action_required,
+                "context_needed": parsed.context_needed,
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/understand/route")
+async def get_routing_info(request: ParseRequest):
+    """
+    Get model routing information based on prompt understanding.
+    Mirrors OpenClaw's model routing mechanism.
+    """
+    if not PROMPT_ENGINE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Prompt engine not available")
+    
+    try:
+        engine = PromptUnderstandingEngine()
+        parsed = engine.parse(request.message, request.session_context)
+        routing = engine.get_routing_info(parsed)
+        
+        return {
+            "status": "success",
+            "routing": routing
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/understand/build-prompt")
+async def build_system_prompt(request: ParseRequest):
+    """
+    Build optimized system prompt based on parsed intent.
+    """
+    if not PROMPT_ENGINE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Prompt engine not available")
+    
+    try:
+        engine = PromptUnderstandingEngine()
+        parsed = engine.parse(request.message, request.session_context)
+        
+        # Get context if needed
+        context_items = []
+        if parsed.context_needed and CONTEXT_MGR_AVAILABLE and context_manager:
+            context = context_manager.get_prompt_context(parsed.context_needed)
+            # Convert to ContextItem objects
+            from context_manager import ContextItem as CMContextItem
+            for key, mem in context.get('memories', []):
+                context_items.append(CMContextItem(
+                    key=key,
+                    value=mem.get('value', ''),
+                    source='memory',
+                    category=mem.get('category', 'fact'),
+                    created_at=datetime.now(),
+                    updated_at=datetime.now(),
+                    relevance_score=mem.get('importance', 5) / 5.0,
+                ))
+        
+        prompt = engine.build_system_prompt(parsed, context_items)
+        
+        return {
+            "status": "success",
+            "prompt": prompt,
+            "parsed": {
+                "intent_type": parsed.intent_type.value,
+                "complexity": parsed.complexity.value,
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================================
+# NEW: RESPONSE DELIVERY ENDPOINTS (OpenClaw-style)
+# ============================================================================
+
+class DeliverRequest(BaseModel):
+    response: str
+    channel: str = "webchat"
+    intent_type: str = "chat"
+    metadata: Dict = None
+
+@app.post("/api/deliver/format")
+async def format_response(request: DeliverRequest):
+    """
+    Format response for specific channel using OpenClaw-style delivery engine.
+    """
+    if not RESPONSE_ENGINE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Response engine not available")
+    
+    try:
+        # Map channel string to enum
+        channel_map = {
+            "webchat": ChannelType.WEBCHAT,
+            "terminal": ChannelType.TERMINAL,
+            "api": ChannelType.API,
+            "markdown": ChannelType.MARKDOWN,
+            "html": ChannelType.HTML,
+            "plain": ChannelType.PLAIN,
+        }
+        channel = channel_map.get(request.channel.lower(), ChannelType.WEBCHAT)
+        
+        engine = ResponseDeliveryEngine()
+        formatted = engine.process_response(
+            raw_response=request.response,
+            channel=channel,
+            intent_type=request.intent_type,
+            metadata=request.metadata
+        )
+        
+        return {
+            "status": "success",
+            "formatted": {
+                "text": formatted.text,
+                "html": formatted.html,
+                "markdown": formatted.markdown,
+                "channel": formatted.channel.value,
+                "metadata": formatted.metadata,
+            },
+            "word_count": formatted.metadata.get('word_count', 0),
+            "char_count": formatted.metadata.get('char_count', 0),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/deliver/safety-check")
+async def safety_check_response(request: DeliverRequest):
+    """
+    Check response for safety issues.
+    """
+    if not RESPONSE_ENGINE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Response engine not available")
+    
+    try:
+        engine = ResponseDeliveryEngine()
+        result = engine._safety_check(request.response)
+        
+        return {
+            "status": "success",
+            "safety": result
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================================
+# NEW: CONTEXT MANAGEMENT ENDPOINTS
+# ============================================================================
+
+class ContextSetRequest(BaseModel):
+    key: str
+    value: Any
+    category: str = "session"
+
+class ContextGetRequest(BaseModel):
+    key: str
+    default: Any = None
+
+@app.post("/api/context/session/set")
+async def set_session_context(request: ContextSetRequest):
+    """Set a session context value."""
+    if not CONTEXT_MGR_AVAILABLE or not context_manager:
+        raise HTTPException(status_code=503, detail="Context manager not available")
+    
+    try:
+        context_manager.set_session(request.key, request.value, request.category)
+        return {"status": "success", "key": request.key}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/context/session/get")
+async def get_session_context(request: ContextGetRequest):
+    """Get a session context value."""
+    if not CONTEXT_MGR_AVAILABLE or not context_manager:
+        raise HTTPException(status_code=503, detail="Context manager not available")
+    
+    try:
+        value = context_manager.get_session(request.key, request.default)
+        return {"status": "success", "key": request.key, "value": value}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/context/memory/add")
+async def add_longterm_memory(request: ContextSetRequest):
+    """Add a long-term memory."""
+    if not CONTEXT_MGR_AVAILABLE or not context_manager:
+        raise HTTPException(status_code=503, detail="Context manager not available")
+    
+    try:
+        key = context_manager.add_memory(
+            key=request.key,
+            value=request.value,
+            category=request.category,
+        )
+        return {"status": "success", "key": key}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/context/memory/search")
+async def search_memories(request: ParseRequest):
+    """Search long-term memories."""
+    if not CONTEXT_MGR_AVAILABLE or not context_manager:
+        raise HTTPException(status_code=503, detail="Context manager not available")
+    
+    try:
+        results = context_manager.search_memories(request.message)
+        memories = [
+            {"key": key, "data": data, "relevance": len(key) / 10}
+            for key, data in results
+        ]
+        return {"status": "success", "results": memories, "total": len(memories)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/context/conversation/add")
+async def add_conversation_turn(request: Dict):
+    """Add a conversation turn to history."""
+    if not CONTEXT_MGR_AVAILABLE or not context_manager:
+        raise HTTPException(status_code=503, detail="Context manager not available")
+    
+    try:
+        context_manager.add_conversation_turn(
+            role=request.get('role', 'user'),
+            content=request.get('content', '')
+        )
+        return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/context/stats")
+async def get_context_stats():
+    """Get context manager statistics."""
+    if not CONTEXT_MGR_AVAILABLE or not context_manager:
+        raise HTTPException(status_code=503, detail="Context manager not available")
+    
+    try:
+        return {"status": "success", "stats": context_manager.get_stats()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/context/export")
+async def export_all_context():
+    """Export all context data."""
+    if not CONTEXT_MGR_AVAILABLE or not context_manager:
+        raise HTTPException(status_code=503, detail="Context manager not available")
+    
+    try:
+        return {"status": "success", "export": context_manager.export_all()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/status")
 async def get_status():
