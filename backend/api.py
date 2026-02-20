@@ -743,6 +743,108 @@ async def get_workflow_status():
     
     return {"status": "ok", "workflows": statuses}
 
+# Structured Thinking Engine
+THINKING_AVAILABLE = False
+try:
+    from thinking_engine import StructuredThinkingEngine, ThinkingPattern, get_thinking_engine
+    THINKING_AVAILABLE = True
+    print("[THINKING] Structured Thinking Engine loaded")
+except ImportError as e:
+    print(f"[THINKING] Warning: {e}")
+
+thinking_engine = None
+
+@app.post("/api/thinking/start")
+async def start_thinking_session(request: Request):
+    """Start a new thinking session."""
+    global thinking_engine
+    if not THINKING_AVAILABLE:
+        return {"error": "Thinking engine not available"}
+    
+    if thinking_engine is None:
+        thinking_engine = get_thinking_engine()
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    pattern = body.get("pattern", "chain_of_thought")
+    
+    try:
+        pattern_enum = ThinkingPattern(pattern)
+    except:
+        pattern_enum = ThinkingPattern.CHAIN_OF_THOUGHT
+    
+    session_id = thinking_engine.create_session(pattern_enum)
+    return {"status": "ok", "session_id": session_id, "pattern": pattern}
+
+@app.post("/api/thinking/thought")
+async def add_thought(request: Request):
+    """Add a thought to the session."""
+    global thinking_engine
+    if not THINKING_AVAILABLE or thinking_engine is None:
+        return {"error": "Thinking engine not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    content = body.get("content", "")
+    reasoning = body.get("reasoning", "")
+    confidence = body.get("confidence", 0.5)
+    parent_id = body.get("parent_id")
+    
+    thought_id = thinking_engine.add_thought(content, reasoning, confidence, parent_id)
+    return {"status": "ok", "thought_id": thought_id}
+
+@app.get("/api/thinking/chain")
+async def get_thinking_chain():
+    """Get the chain of thoughts."""
+    global thinking_engine
+    if not THINKING_AVAILABLE or thinking_engine is None:
+        return {"error": "Thinking engine not available"}
+    
+    chain = thinking_engine.get_thought_chain()
+    return {"status": "ok", "chain": chain}
+
+@app.post("/api/thinking/reflect")
+async def reflect_thinking():
+    """Reflect on current thinking."""
+    global thinking_engine
+    if not THINKING_AVAILABLE or thinking_engine is None:
+        return {"error": "Thinking engine not available"}
+    
+    reflection = thinking_engine.reflect()
+    return {"status": "ok", "reflection": reflection}
+
+@app.post("/api/thinking/conclude")
+async def conclude_thinking(request: Request):
+    """Conclude the thinking session."""
+    global thinking_engine
+    if not THINKING_AVAILABLE or thinking_engine is None:
+        return {"error": "Thinking engine not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    answer = body.get("answer", "")
+    result = thinking_engine.conclude(answer)
+    return {"status": "ok", "result": result}
+
+@app.get("/api/thinking/summary")
+async def get_thinking_summary():
+    """Get thinking session summary."""
+    global thinking_engine
+    if not THINKING_AVAILABLE or thinking_engine is None:
+        return {"error": "Thinking engine not available"}
+    
+    summary = thinking_engine.get_session_summary()
+    return {"status": "ok", "summary": summary}
+
 # Structured Response Formatter
 STRUCTURED_AVAILABLE = False
 try:
