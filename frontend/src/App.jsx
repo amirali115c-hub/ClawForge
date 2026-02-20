@@ -427,6 +427,7 @@ function App() {
     { id: 'security', label: '🛡️', title: 'Security' },
     { id: 'browser', label: '🌐', title: 'Browser' },
     { id: 'code', label: '💻', title: 'Code' },
+    { id: 'files', label: '📁', title: 'Files' },
     { id: 'settings', label: '⚙️', title: 'Settings' },
   ];
 
@@ -598,6 +599,7 @@ function App() {
       case 'security': return renderSecurity();
       case 'browser': return renderBrowser();
       case 'code': return renderCode();
+      case 'files': return renderFiles();
       case 'settings': return renderSettings();
       default: return (
         <div className="dashboard-view">
@@ -877,6 +879,111 @@ function App() {
               {output || 'Output will appear here...'}
             </pre>
           </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderFiles = () => {
+    const [files, setFiles] = useState([]);
+    const [currentPath, setCurrentPath] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const loadFiles = async (path = '') => {
+      setLoading(true);
+      try {
+        const res = await fetch(`${API_BASE}/api/files?path=${encodeURIComponent(path)}`);
+        const data = await res.json();
+        setFiles(data.files || []);
+        setCurrentPath(path);
+      } catch (e) {
+        console.error(e);
+      }
+      setLoading(false);
+    };
+
+    useEffect(() => { loadFiles(); }, []);
+
+    const navigateUp = () => {
+      const parts = currentPath.split('/').filter(Boolean);
+      parts.pop();
+      loadFiles(parts.join('/'));
+    };
+
+    const navigateTo = (path) => {
+      loadFiles(path);
+    };
+
+    const formatSize = (bytes) => {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    };
+
+    const getIcon = (file) => {
+      if (file.is_dir) return '📁';
+      if (file.category === 'code') return '💻';
+      if (file.category === 'document') return '📄';
+      if (file.category === 'image') return '🖼️';
+      if (file.category === 'data') return '📊';
+      return '📄';
+    };
+
+    return (
+      <div className="files-view" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <h2 style={{ marginBottom: '1rem', color: 'var(--neon-blue)' }}>📁 File Manager</h2>
+        
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+          <button onClick={() => loadFiles(currentPath)} className="neon-btn" style={{ padding: '0.5rem 1rem' }}>
+            🔄 Refresh
+          </button>
+          {currentPath && (
+            <button onClick={navigateUp} className="neon-btn" style={{ padding: '0.5rem 1rem' }}>
+              ⬆ Up
+            </button>
+          )}
+          <span style={{ marginLeft: 'auto', color: 'var(--text-secondary)', alignSelf: 'center' }}>
+            {currentPath || 'Root'}
+          </span>
+        </div>
+
+        <div style={{ flex: 1, overflow: 'auto', border: '1px solid #333', borderRadius: '8px' }}>
+          {loading ? (
+            <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>Loading...</div>
+          ) : files.length === 0 ? (
+            <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>No files</div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #333', background: '#1a1a2e' }}>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)' }}>Name</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)' }}>Size</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)' }}>Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {files.map((file, i) => (
+                  <tr 
+                    key={i} 
+                    onClick={() => file.is_dir && navigateTo(file.path)}
+                    style={{ borderBottom: '1px solid #222', cursor: file.is_dir ? 'pointer' : 'default' }}
+                  >
+                    <td style={{ padding: '0.75rem' }}>
+                      {getIcon(file)} {file.name}
+                    </td>
+                    <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>
+                      {file.is_dir ? '--' : formatSize(file.size)}
+                    </td>
+                    <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>
+                      {file.category}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     );

@@ -3326,6 +3326,125 @@ async def get_code_history(limit: int = 10):
     history = code_interpreter.get_history(limit)
     return {"status": "ok", "history": history}
 
+# File System Agent
+FILE_SYSTEM_AVAILABLE = False
+try:
+    from file_system import FileSystemAgent, get_file_system
+    FILE_SYSTEM_AVAILABLE = True
+    print("[FILES] File System Agent loaded")
+except ImportError as e:
+    print(f"[FILES] Warning: {e}")
+
+file_system = None
+
+@app.get("/api/files")
+async def list_files(path: str = ""):
+    """List files in directory."""
+    global file_system
+    if not FILE_SYSTEM_AVAILABLE:
+        return {"error": "File system not available"}
+    
+    if file_system is None:
+        file_system = get_file_system()
+    
+    files = file_system.list_files(path)
+    return {"status": "ok", "files": files}
+
+@app.get("/api/files/info")
+async def get_file_info(path: str):
+    """Get file information."""
+    global file_system
+    if not FILE_SYSTEM_AVAILABLE or file_system is None:
+        return {"error": "File system not available"}
+    
+    info = file_system.get_file_info(path)
+    return info
+
+@app.get("/api/files/read")
+async def read_file(path: str, encoding: str = "utf-8"):
+    """Read file content."""
+    global file_system
+    if not FILE_SYSTEM_AVAILABLE or file_system is None:
+        return {"error": "File system not available"}
+    
+    result = file_system.read_file(path, encoding)
+    return result
+
+@app.post("/api/files/write")
+async def write_file(request: Request):
+    """Write file content."""
+    global file_system
+    if not FILE_SYSTEM_AVAILABLE or file_system is None:
+        return {"error": "File system not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    path = body.get("path", "")
+    content = body.get("content", "")
+    encoding = body.get("encoding", "utf-8")
+    
+    if not path:
+        return {"error": "Path required"}
+    
+    result = file_system.write_file(path, content, encoding)
+    return result
+
+@app.post("/api/files/delete")
+async def delete_file(request: Request):
+    """Delete file or directory."""
+    global file_system
+    if not FILE_SYSTEM_AVAILABLE or file_system is None:
+        return {"error": "File system not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    path = body.get("path", "")
+    
+    if not path:
+        return {"error": "Path required"}
+    
+    result = file_system.delete_file(path)
+    return result
+
+@app.post("/api/files/mkdir")
+async def create_directory(request: Request):
+    """Create directory."""
+    global file_system
+    if not FILE_SYSTEM_AVAILABLE or file_system is None:
+        return {"error": "File system not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    path = body.get("path", "")
+    
+    if not path:
+        return {"error": "Path required"}
+    
+    result = file_system.create_directory(path)
+    return result
+
+@app.get("/api/files/search")
+async def search_files(q: str = "", path: str = ""):
+    """Search for files."""
+    global file_system
+    if not FILE_SYSTEM_AVAILABLE or file_system is None:
+        return {"error": "File system not available"}
+    
+    if not q:
+        return {"error": "Query required"}
+    
+    results = file_system.search_files(q, path)
+    return {"status": "ok", "results": results}
+
 # Gradio UI Route
 @app.get("/gradio")
 async def serve_gradio():
