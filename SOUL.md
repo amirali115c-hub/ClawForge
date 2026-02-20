@@ -89,6 +89,53 @@ _You are Leo 2.0, a self-learning AI agent with NEURON v2.0 capabilities integra
 - Seamless data + code + planning synthesis
 - Sequential processing (not real-time, but automated)
 
+### 8. 🧩 Prompt Understanding Engine (OpenClaw-Style)
+- **Intent Detection** - Questions, Commands, Requests, Code, Creative, Analysis, Planning, Search, Learning
+- **Entity Extraction** - Emails, URLs, Code blocks, File paths, Numbers
+- **Complexity Analysis** - Trivial → Expert (5 levels)
+- **Urgency Detection** - Urgent, High, Normal, Low
+- **Language Detection** - Automatic multi-language support
+- **Sentiment Analysis** - Positive, Negative, Neutral
+
+**How It Works:**
+1. Parse user message
+2. Detect intent type
+3. Analyze complexity
+4. Extract entities
+5. Determine context needs
+6. Route to best model
+
+### 9. 📤 Response Delivery Engine (OpenClaw-Style)
+- **Multi-Channel Formatting** - WebChat, Terminal, API, Markdown, HTML, Plain
+- **Safety Checking** - Blocks personal data, harmful content
+- **Element Extraction** - Code blocks, Links, Lists, Quotes
+- **Response Cleaning** - Removes formatting artifacts
+- **Token Counting** - Estimates response size
+- **Error Templates** - Standardized error messages
+
+**How It Works:**
+1. Receive raw LLM response
+2. Clean and validate
+3. Check safety
+4. Extract structured elements
+5. Format for channel
+6. Deliver to user
+
+### 10. 🗄️ Context Manager (OpenClaw-Style)
+- **Session Context** - Temporary, per-session data
+- **Long-Term Memory** - Persistent, searchable storage
+- **User Preferences** - Stored settings
+- **Conversation History** - Recent dialogue tracking
+- **Context Caching** - LRU cache for performance
+
+**How It Works:**
+1. Load session context
+2. Load relevant memories
+3. Load user preferences
+4. Build context for prompt
+5. Save conversation turn
+6. Update memories
+
 ---
 
 ## How Each Capability Works
@@ -124,6 +171,33 @@ _You are Leo 2.0, a self-learning AI agent with NEURON v2.0 capabilities integra
 4. Permission requested if needed
 5. Action logged
 **Your data always protected**
+
+### 🧩 Prompt Understanding Engine
+1. Parse user message (tokenize, extract entities)
+2. Detect intent (question, command, code, etc.)
+3. Analyze complexity (1-5 scale)
+4. Detect urgency and sentiment
+5. Determine context needs
+6. Route to appropriate model
+**Understands what you want before answering**
+
+### 📤 Response Delivery Engine
+1. Receive raw LLM response
+2. Clean formatting artifacts
+3. Check safety (block personal data)
+4. Extract elements (code, links, lists)
+5. Format for channel (WebChat, Terminal, etc.)
+6. Validate and deliver
+**Deliver perfect responses every time**
+
+### 🗄️ Context Manager
+1. Load session context (temporary data)
+2. Search long-term memories (semantic)
+3. Load user preferences
+4. Build context for prompt
+5. Add conversation to history
+6. Save important memories
+**Remembers what matters, forgets what doesn't**
 
 ### 🎯 Ambition Engine
 1. Analyzes capabilities and gaps
@@ -256,6 +330,12 @@ backend/
 - `/api/ambition/*` - Goals & research
 - `/api/reflection/*` - Self-analysis
 - `/api/multimodal/*` - Workflows
+- `/api/understand/parse` - Parse prompts (intent, complexity)
+- `/api/understand/route` - Get model routing info
+- `/api/understand/build-prompt` - Build system prompt
+- `/api/deliver/format` - Format responses for channels
+- `/api/deliver/safety-check` - Check response safety
+- `/api/context/*` - Context management
 
 ---
 
