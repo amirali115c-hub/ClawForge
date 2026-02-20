@@ -101,8 +101,68 @@ class RAGEngine:
     
     # ========== DOCUMENT INGESTION ==========
     
-    def add_document(self, content: str, source: str, metadata: Dict = None) -> str:
+    def extract_pdf_text(self, base64_data: str) -> str:
+        """Extract text from PDF using PyPDF2."""
+        try:
+            import io
+            import PyPDF2
+            import base64
+            
+            # Decode base64
+            pdf_data = base64.b64decode(base64_data)
+            pdf_file = io.BytesIO(pdf_data)
+            
+            # Extract text
+            text = ""
+            reader = PyPDF2.PdfReader(pdf_file)
+            for page in reader.pages:
+                text += page.extract_text() + "\n\n"
+            
+            return text
+        except ImportError:
+            # PyPDF2 not available
+            return "[PDF content - PyPDF2 not installed. Please install: pip install PyPDF2]"
+        except Exception as e:
+            return f"[Error extracting PDF: {str(e)}]"
+    
+    def extract_docx_text(self, base64_data: str) -> str:
+        """Extract text from DOCX using python-docx."""
+        try:
+            import io
+            import zipfile
+            import base64
+            import re
+            
+            # Decode base64
+            docx_data = base64.b64decode(base64_data)
+            docx_file = io.BytesIO(docx_data)
+            
+            # DOCX is a zip file - extract text from word/document.xml
+            text = ""
+            with zipfile.ZipFile(docx_file) as z:
+                if 'word/document.xml' in z.namelist():
+                    with z.open('word/document.xml') as xml_file:
+                        content = xml_file.read().decode('utf-8')
+                        # Remove XML tags
+                        text = re.sub(r'<[^>]+>', '', content)
+                        text = re.sub(r'\s+', ' ', text).strip()
+            
+            return text
+        except ImportError:
+            return "[DOCX content - python-docx not installed. Please install: pip install python-docx]"
+        except Exception as e:
+            return f"[Error extracting DOCX: {str(e)}]"
+    
+    def add_document(self, content: str, source: str, metadata: Dict = None, is_base64: bool = False, file_type: str = None) -> str:
         """Add a document to the knowledge base."""
+        
+        # Handle base64-encoded files (PDF, DOC)
+        if is_base64 and file_type in ['pdf', 'doc', 'docx']:
+            if file_type == 'pdf':
+                content = self.extract_pdf_text(content)
+            elif file_type in ['doc', 'docx']:
+                content = self.extract_docx_text(content)
+        
         with self.lock:
             doc_id = self._generate_id(content)
             

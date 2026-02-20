@@ -636,11 +636,13 @@ async def add_rag_document(request: Request):
     content = body.get("content", "")
     source = body.get("source", "unknown")
     metadata = body.get("metadata")
+    is_base64 = body.get("is_base64", False)
+    file_type = body.get("file_type")
     
     if not content:
         return {"error": "No content provided"}
     
-    doc_id = add_document(content, source, metadata)
+    doc_id = add_document(content, source, metadata, is_base64, file_type)
     return {"status": "ok", "document_id": doc_id}
 
 @app.get("/api/rag/search")

@@ -281,7 +281,94 @@ function App() {
     const file = e.target.files[0];
     if (!file) return;
     
-    // Read file content as text
+    // Check file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      setChatMessages(prev => [...prev, { 
+        role: 'system', 
+        content: `❌ File too large! Maximum size is 5MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB` 
+      }]);
+      e.target.value = '';
+      return;
+    }
+    
+    // Check file type
+    const allowedTypes = [
+      'text/plain', 'text/markdown', 'text/html', 'text/css', 'text/javascript',
+      'application/json', 'application/javascript',
+      'application/pdf', 'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    
+    const ext = file.name.split('.').pop().toLowerCase();
+    const allowedExts = ['txt', 'md', 'json', 'js', 'py', 'html', 'css', 'xml', 'csv', 'pdf', 'doc', 'docx'];
+    
+    if (!allowedExts.includes(ext)) {
+      setChatMessages(prev => [...prev, { 
+        role: 'system', 
+        content: `❌ File type not supported! Allowed: ${allowedExts.join(', ')}` 
+      }]);
+      e.target.value = '';
+      return;
+    }
+    
+    // Show uploading message
+    setChatMessages(prev => [...prev, { 
+      role: 'system', 
+      content: `📤 Uploading "${file.name}"... (${(file.size / 1024).toFixed(1)}KB)` 
+    }]);
+    
+    // For PDF and DOC, we need special handling
+    if (ext === 'pdf' || ext === 'doc' || ext === 'docx') {
+      // Send file as base64 for special processing
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result.split(',')[1];
+        
+        try {
+          const response = await fetch(`${API_BASE}/api/rag/document/add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              content: base64,
+              source: file.name,
+              is_base64: true,
+              file_type: ext,
+              metadata: {
+                type: file.type,
+                size: file.size,
+                uploaded: new Date().toISOString()
+              }
+            }),
+          });
+          
+          const result = await response.json();
+          
+          if (result.status === 'ok') {
+            setChatMessages(prev => [...prev, { 
+              role: 'system', 
+              content: `📎 File "${file.name}" uploaded successfully! (${(file.size / 1024).toFixed(1)}KB)` 
+            }]);
+          } else {
+            setChatMessages(prev => [...prev, { 
+              role: 'system', 
+              content: `❌ Upload failed: ${result.error || 'Unknown error'}` 
+            }]);
+          }
+        } catch (err) {
+          setChatMessages(prev => [...prev, { 
+            role: 'system', 
+            content: `❌ Upload error: ${err.message}` 
+          }]);
+        }
+      };
+      
+      reader.readAsDataURL(file);
+      e.target.value = '';
+      return;
+    }
+    
+    // For text files, read as text
     const reader = new FileReader();
     reader.onload = async (event) => {
       const content = event.target.result;
@@ -291,7 +378,7 @@ function App() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            content: content.substring(0, 50000), // Limit to 50k chars
+            content: content.substring(0, 5000000), // Limit to 5MB chars
             source: file.name,
             metadata: {
               type: file.type,
@@ -306,7 +393,7 @@ function App() {
         if (result.status === 'ok') {
           setChatMessages(prev => [...prev, { 
             role: 'system', 
-            content: `📎 File "${file.name}" uploaded to knowledge base! (${file.size} bytes)` 
+            content: `📎 File "${file.name}" uploaded successfully! (${(file.size / 1024).toFixed(1)}KB)` 
           }]);
         } else {
           setChatMessages(prev => [...prev, { 
@@ -329,10 +416,7 @@ function App() {
       }]);
     };
     
-    // Read as text for .txt, .md, .json, .py, .js, etc.
     reader.readAsText(file);
-    
-    // Reset input
     e.target.value = '';
   };
 
@@ -392,12 +476,12 @@ function App() {
             id="file-upload"
             style={{ display: 'none' }}
             onChange={handleFileUpload}
-            accept=".txt,.pdf,.md,.json,.py,.js,.html,.css,.csv"
+            accept=".txt,.pdf,.md,.json,.py,.js,.html,.css,.csv,.doc,.docx"
           />
           <button 
             className="upload-btn"
             onClick={() => document.getElementById('file-upload').click()}
-            title="Upload document to knowledge base"
+            title="Upload document to knowledge base (max 5MB)"
           >
             📎
           </button>
