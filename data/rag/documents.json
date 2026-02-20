@@ -1,0 +1,12 @@
+{
+  "78ad0ff5764e089c": {
+    "id": "78ad0ff5764e089c",
+    "source": "python-guide.txt",
+    "content": "Python is a high-level programming language. It supports object-oriented programming. Python is great for AI and machine learning.",
+    "metadata": {
+      "category": "programming"
+    },
+    "created_at": "2026-02-20T23:22:15.095998",
+    "chunk_count": 1
+  }
+}

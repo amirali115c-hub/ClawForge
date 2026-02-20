@@ -466,6 +466,259 @@ async def get_resume_convo(request: Request):
     result = get_resume_summary(messages)
     return {"resume_summary": result}
 
+# Database Adapter
+DB_AVAILABLE = False
+try:
+    from database_adapter import DatabaseAdapter, get_db_adapter
+    DB_AVAILABLE = True
+    print("[DATABASE] Database Adapter loaded")
+except ImportError as e:
+    print(f"[DATABASE] Warning: {e}")
+
+@app.get("/api/db/stats")
+async def get_database_stats():
+    """Get database statistics."""
+    if not DB_AVAILABLE:
+        return {"error": "Database not available"}
+    
+    db = get_db_adapter()
+    stats = db.get_stats()
+    return {"status": "ok", "stats": stats}
+
+@app.post("/api/db/user/create")
+async def create_user(request: Request):
+    """Create a new user."""
+    if not DB_AVAILABLE:
+        return {"error": "Database not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    db = get_db_adapter()
+    user_id = db.create_user(
+        username=body.get("username", "anonymous"),
+        email=body.get("email"),
+        metadata=body.get("metadata")
+    )
+    return {"status": "ok", "user_id": user_id}
+
+@app.get("/api/db/conversations")
+async def get_conversations(user_id: int = 1):
+    """Get user conversations."""
+    if not DB_AVAILABLE:
+        return {"error": "Database not available"}
+    
+    db = get_db_adapter()
+    conversations = db.get_user_conversations(user_id)
+    return {"status": "ok", "conversations": conversations}
+
+@app.post("/api/db/conversation/create")
+async def create_conversation(request: Request):
+    """Create a new conversation."""
+    if not DB_AVAILABLE:
+        return {"error": "Database not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    db = get_db_adapter()
+    conv_id = db.create_conversation(
+        user_id=body.get("user_id", 1),
+        title=body.get("title", "New Chat")
+    )
+    return {"status": "ok", "conversation_id": conv_id}
+
+@app.post("/api/db/message/add")
+async def add_message(request: Request):
+    """Add a message to conversation."""
+    if not DB_AVAILABLE:
+        return {"error": "Database not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    db = get_db_adapter()
+    msg_id = db.add_message(
+        conversation_id=body.get("conversation_id"),
+        role=body.get("role", "user"),
+        content=body.get("content", ""),
+        metadata=body.get("metadata")
+    )
+    return {"status": "ok", "message_id": msg_id}
+
+@app.get("/api/db/messages")
+async def get_messages(conversation_id: int):
+    """Get conversation messages."""
+    if not DB_AVAILABLE:
+        return {"error": "Database not available"}
+    
+    db = get_db_adapter()
+    messages = db.get_conversation_messages(conversation_id)
+    return {"status": "ok", "messages": messages}
+
+@app.post("/api/db/memory/save")
+async def save_memory(request: Request):
+    """Save a memory."""
+    if not DB_AVAILABLE:
+        return {"error": "Database not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    db = get_db_adapter()
+    memory_id = db.save_memory(
+        user_id=body.get("user_id", 1),
+        key=body.get("key", ""),
+        value=body.get("value", ""),
+        category=body.get("category", "general"),
+        importance=body.get("importance", 5),
+        tags=body.get("tags")
+    )
+    return {"status": "ok", "memory_id": memory_id}
+
+@app.get("/api/db/memory")
+async def get_memory(user_id: int = 1, key: str = ""):
+    """Get a memory."""
+    if not DB_AVAILABLE:
+        return {"error": "Database not available"}
+    
+    db = get_db_adapter()
+    value = db.get_memory(user_id, key)
+    return {"status": "ok", "key": key, "value": value}
+
+@app.get("/api/db/memory/search")
+async def search_memory(user_id: int = 1, query: str = "", category: str = None):
+    """Search memories."""
+    if not DB_AVAILABLE:
+        return {"error": "Database not available"}
+    
+    db = get_db_adapter()
+    results = db.search_memories(user_id, query, category)
+    return {"status": "ok", "results": results}
+
+# RAG Engine (Advanced Knowledge Base)
+RAG_AVAILABLE = False
+try:
+    from rag_engine import RAGEngine, add_document, search_knowledge_base, get_rag_stats
+    RAG_AVAILABLE = True
+    print("[RAG] RAG Engine loaded")
+except ImportError as e:
+    print(f"[RAG] Warning: {e}")
+
+@app.get("/api/rag/stats")
+async def get_rag_statistics():
+    """Get RAG statistics."""
+    if not RAG_AVAILABLE:
+        return {"error": "RAG not available"}
+    
+    stats = get_rag_stats()
+    return {"status": "ok", "stats": stats}
+
+@app.post("/api/rag/document/add")
+async def add_rag_document(request: Request):
+    """Add a document to knowledge base."""
+    if not RAG_AVAILABLE:
+        return {"error": "RAG not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    content = body.get("content", "")
+    source = body.get("source", "unknown")
+    metadata = body.get("metadata")
+    
+    if not content:
+        return {"error": "No content provided"}
+    
+    doc_id = add_document(content, source, metadata)
+    return {"status": "ok", "document_id": doc_id}
+
+@app.get("/api/rag/search")
+async def search_rag(query: str = "", top_k: int = 5):
+    """Search knowledge base."""
+    if not RAG_AVAILABLE:
+        return {"error": "RAG not available"}
+    
+    if not query:
+        return {"error": "No query provided"}
+    
+    results = search_knowledge_base(query, top_k)
+    return {"status": "ok", "query": query, "results": results}
+
+@app.get("/api/rag/documents")
+async def list_rag_documents():
+    """List all documents in knowledge base."""
+    if not RAG_AVAILABLE:
+        return {"error": "RAG not available"}
+    
+    from rag_engine import get_rag_engine
+    engine = get_rag_engine()
+    documents = engine.list_documents()
+    return {"status": "ok", "documents": documents}
+
+@app.delete("/api/rag/document/{doc_id}")
+async def delete_rag_document(doc_id: str):
+    """Delete a document from knowledge base."""
+    if not RAG_AVAILABLE:
+        return {"error": "RAG not available"}
+    
+    from rag_engine import get_rag_engine
+    engine = get_rag_engine()
+    success = engine.delete_document(doc_id)
+    return {"status": "ok" if success else "error", "deleted": success}
+
+# Structured Response Formatter
+STRUCTURED_AVAILABLE = False
+try:
+    from structured_response import format_response, detect_format, get_formatter
+    STRUCTURED_AVAILABLE = True
+    print("[STRUCTURED] Structured Response Formatter loaded")
+except ImportError as e:
+    print(f"[STRUCTURED] Warning: {e}")
+
+@app.post("/api/format/response")
+async def format_response_endpoint(request: Request):
+    """Format a response in a structured way."""
+    if not STRUCTURED_AVAILABLE:
+        return {"error": "Formatter not available"}
+    
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    
+    data = body.get("data")
+    format_type = body.get("format", "markdown")
+    
+    if data is None:
+        return {"error": "No data provided"}
+    
+    from structured_response import format_response as sr_format
+    formatted = sr_format(data, format_type)
+    return {"status": "ok", "format": format_type, "formatted": formatted}
+
+@app.get("/api/format/detect")
+async def detect_format_endpoint(text: str = ""):
+    """Auto-detect desired format from text."""
+    if not STRUCTURED_AVAILABLE:
+        return {"error": "Formatter not available"}
+    
+    if not text:
+        return {"error": "No text provided"}
+    
+    detected = detect_format(text)
+    return {"status": "ok", "text": text, "detected_format": detected}
+
 @app.get("/api/health/detailed")
 async def detailed_health_check():
     """Detailed health check with all service statuses."""
