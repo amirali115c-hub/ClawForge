@@ -84,6 +84,7 @@ try:
 except ImportError as e:
     CONTEXT_AVAILABLE = False
     print(f"Warning: Context system not available: {e}")
+
 from features import (
     get_memory_stats,
     search_memories,
@@ -241,6 +242,69 @@ async def root():
         "agent": "Leo 2.0",
         "version": "2.0",
         "timestamp": datetime.utcnow().isoformat()
+    }
+
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint for monitoring."""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "version": "2.0.0"
+    }
+
+@app.get("/api/health/detailed")
+async def detailed_health_check():
+    """Detailed health check with all service statuses."""
+    from features import get_memory_stats
+    
+    # Check module availability
+    neuron_status = "unknown"
+    router_status = "unknown"
+    vector_status = "unknown"
+    custodian_status = "unknown"
+    
+    try:
+        from neuron_integration import NEURON_AVAILABLE
+        neuron_status = "active" if NEURON_AVAILABLE else "inactive"
+    except:
+        neuron_status = "inactive"
+    
+    try:
+        from smart_router import SMART_ROUTER_AVAILABLE
+        router_status = "active" if SMART_ROUTER_AVAILABLE else "inactive"
+    except:
+        router_status = "inactive"
+    
+    try:
+        from vector_memory import VECTOR_MEMORY_AVAILABLE
+        vector_status = "active" if VECTOR_MEMORY_AVAILABLE else "inactive"
+    except:
+        vector_status = "inactive"
+    
+    try:
+        from custodian import CUSTODIAN_AVAILABLE
+        custodian_status = "active" if CUSTODIAN_AVAILABLE else "inactive"
+    except:
+        custodian_status = "inactive"
+    
+    try:
+        memory_stats = get_memory_stats()
+    except:
+        memory_stats = {"error": "Unable to fetch memory stats"}
+    
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "version": "2.0.0",
+        "services": {
+            "api": {"status": "running", "port": 7860},
+            "neuron": {"status": neuron_status},
+            "smart_router": {"status": router_status},
+            "vector_memory": {"status": vector_status},
+            "custodian": {"status": custodian_status}
+        },
+        "memory": memory_stats
     }
 
 @app.get("/api/status")

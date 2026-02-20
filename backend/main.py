@@ -47,11 +47,11 @@ def run_server():
     import uvicorn
     from api import app
     
-    print("\nStarting ClawForge API Server...")
-    print("   Dashboard: http://127.0.0.1:8000")
+    print("\nStarting Leo 2.0 API Server...")
+    print("   URL: http://127.0.0.1:9000")
     print("   Press Ctrl+C to stop\n")
     
-    uvicorn.run(app, host="127.0.0.1", port=8000, reload=False)
+    uvicorn.run(app, host="127.0.0.1", port=9000, reload=False)
 
 
 async def execute_task(task_description: str):

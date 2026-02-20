@@ -14,11 +14,10 @@ from datetime import datetime
 from pathlib import Path
 
 # Configuration
-BACKEND_PORT = 7860
+BACKEND_PORT = 9000
 FRONTEND_PORT = 3000
 BACKEND_URL = f"http://127.0.0.1:{BACKEND_PORT}"
 FRONTEND_URL = f"http://127.0.0.1:{FRONTEND_PORT}"
-CHECK_INTERVAL = 10  # seconds
 RESTART_DELAY = 5  # seconds
 
 # Paths
