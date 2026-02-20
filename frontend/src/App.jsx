@@ -592,13 +592,22 @@ function App() {
 
   // Placeholder functions for new tabs - defined before use
   const renderBrowser = () => (
-    <div style={{padding:'1rem'}}><h2>Browser</h2><p>Loading...</p></div>
+    <div className="dashboard-view">
+      <h2 style={{ marginBottom: '1rem', color: 'var(--neon-blue)' }}>Browser Automation</h2>
+      <p>Click Start Browser to begin</p>
+    </div>
   );
   const renderCode = () => (
-    <div style={{padding:'1rem'}}><h2>Code</h2><p>Loading...</p></div>
+    <div className="dashboard-view">
+      <h2 style={{ marginBottom: '1rem', color: 'var(--neon-blue)' }}>Code Interpreter</h2>
+      <p>Write and run Python code</p>
+    </div>
   );
   const renderFiles = () => (
-    <div style={{padding:'1rem'}}><h2>Files</h2><p>Loading...</p></div>
+    <div className="dashboard-view">
+      <h2 style={{ marginBottom: '1rem', color: 'var(--neon-blue)' }}>File Manager</h2>
+      <p>Browse and manage files</p>
+    </div>
   );
 
   const renderContent = () => {
